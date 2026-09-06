@@ -1,0 +1,102 @@
+{
+  "app": {
+    "title": "Weather",
+    "subtitle": "Travel planner — beach & countryside"
+  },
+  "search": {
+    "placeholder": "Where are you going today?",
+    "searching": "Searching...",
+    "noResults": "No results found",
+    "recent": "Recent",
+    "detecting": "Detecting location..."
+  },
+  "header": {
+    "feelsLike": "Feels like {{temp}}°",
+    "overcast": "Overcast",
+    "clear": "Clear",
+    "partlyCloudy": "Partly cloudy",
+    "description": "Cloudy morning, followed by afternoon sun. High {{max}}° to {{max2}}° and low {{min}}° to {{min2}}°.",
+    "high": "H",
+    "low": "L"
+  },
+  "hourly": {
+    "title": "Hourly forecast",
+    "now": "Now"
+  },
+  "daily": {
+    "title": "10-day forecast",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "moreDays": "10-day forecast"
+  },
+  "sunset": {
+    "sunsetAt": "Sunset will be at {{time}}",
+    "sunrise": "Sunrise",
+    "sunset": "Sunset"
+  },
+  "sport": {
+    "title": "Running",
+    "status": "Clear",
+    "desc": "Clear weather for running right now"
+  },
+  "metrics": {
+    "humidity": "Humidity",
+    "humidityDesc": "There is low haze",
+    "wind": "Wind",
+    "windGust": "Gusts {{value}} km/h",
+    "feelsLike": "Feels like",
+    "pressure": "Pressure",
+    "pressureDesc": "Rising rapidly",
+    "visibility": "Visibility",
+    "uv": "UV Index",
+    "uvLow": "Low",
+    "uvModerate": "Moderate",
+    "precipitation": "Precipitation",
+    "dewPoint": "Dew point"
+  },
+  "marine": {
+    "title": "Waves & tides",
+    "waveHeight": "Wave height",
+    "wavePeriod": "Period",
+    "waveDirection": "Direction",
+    "tideHigh": "High tide",
+    "tideLow": "Low tide",
+    "noData": "No marine data for this location"
+  },
+  "cache": {
+    "stale": "Stale data — offline",
+    "updatedAt": "Updated {{time}}",
+    "justNow": "just now"
+  },
+  "geo": {
+    "beach": "Beach",
+    "countryside": "Countryside",
+    "auto": "Auto"
+  },
+  "weather": {
+    "0": "Clear sky",
+    "1": "Mainly clear",
+    "2": "Partly cloudy",
+    "3": "Overcast",
+    "45": "Fog",
+    "48": "Depositing fog",
+    "51": "Light drizzle",
+    "53": "Moderate drizzle",
+    "55": "Dense drizzle",
+    "61": "Slight rain",
+    "63": "Moderate rain",
+    "65": "Heavy rain",
+    "71": "Slight snow",
+    "73": "Moderate snow",
+    "75": "Heavy snow",
+    "80": "Slight showers",
+    "81": "Moderate showers",
+    "82": "Violent showers",
+    "95": "Thunderstorm",
+    "96": "Thunderstorm with hail"
+  },
+  "footer": {
+    "report": "Report incorrect information",
+    "source": "The Weather Channel"
+  }
+}
