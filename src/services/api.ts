@@ -69,7 +69,26 @@ export async function fetchForecast(lat: number, lon: number): Promise<ForecastR
 
 export type MarineResponse = {
   current: { wave_height: number | null; wave_direction: number | null; wave_period: number | null }
-  hourly: { time: string[]; sea_level_height_msl: number[] }
+  hourly: { time: string[]; sea_level_height_msl: number[]; wave_height?: number[] }
+  daily?: { time: string[]; wave_height_max?: number[] }
+}
+
+export type StormglassTide = { time: string; height: number; type: 'high' | 'low' }
+
+async function fetchStormglassTides(lat: number, lon: number): Promise<StormglassTide[] | null> {
+  const key = import.meta.env.VITE_STORMGLASS_KEY as string | undefined
+  if (!key) return null
+  try {
+    const start = new Date().toISOString().slice(0, 10)
+    const end = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10)
+    const url = `https://api.stormglass.io/v2/tide/extremes/point?lat=${lat}&lng=${lon}&start=${start}&end=${end}`
+    const res = await fetch(url, { headers: { Authorization: key } })
+    if (!res.ok) return null
+    const json = (await res.json()) as { data: { time: string; height: number; type: 'high' | 'low' }[] }
+    return json.data?.map((d) => ({ time: d.time, height: d.height, type: d.type })) ?? null
+  } catch {
+    return null
+  }
 }
 
 export async function fetchMarine(lat: number, lon: number): Promise<MarineResponse | null> {
@@ -80,17 +99,23 @@ export async function fetchMarine(lat: number, lon: number): Promise<MarineRespo
         latitude: String(lat),
         longitude: String(lon),
         current: 'wave_height,wave_direction,wave_period',
-        hourly: 'sea_level_height_msl',
+        hourly: 'sea_level_height_msl,wave_height',
+        daily: 'wave_height_max',
         timezone: 'auto',
+        forecast_days: '7',
       })
       const res = await fetch(`https://marine-api.open-meteo.com/v1/marine?${params}`)
       if (!res.ok) throw new Error(`Marine ${res.status}`)
       return (await res.json()) as MarineResponse
     })
-    // se não tem dados de onda, considerar não costeiro
     if (data.current?.wave_height == null) return null
     return data
   } catch {
     return null
   }
+}
+
+export async function fetchMarineWithTides(lat: number, lon: number): Promise<{ marine: MarineResponse | null; tides: StormglassTide[] | null }> {
+  const [marine, tides] = await Promise.all([fetchMarine(lat, lon), fetchStormglassTides(lat, lon)])
+  return { marine, tides }
 }

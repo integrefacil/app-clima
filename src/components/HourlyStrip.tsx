@@ -5,7 +5,7 @@ import { wmoIcon } from '../lib/wmo'
 type Hour = { time: string; temp: number; code: number; precip?: number }
 
 export function HourlyStrip({ hours }: { hours: Hour[] }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   return (
     <div className="glass p-3 md:p-4">
       <p className="text-xs md:text-sm text-white/60 uppercase tracking-widest mb-2">{t('hourly.title')}</p>
@@ -19,7 +19,8 @@ export function HourlyStrip({ hours }: { hours: Hour[] }) {
                   {wmoIcon(h.code)}
                 </span>
                 <span className="text-sm md:text-base font-medium">{Math.round(h.temp)}°</span>
-                {h.precip != null && h.precip > 0 && <span className="text-[10px] md:text-xs text-sky-200">{h.precip}%</span>}
+                {h.precip != null && h.precip > 30 && <span className="text-[10px] md:text-xs text-sky-100">{i18n.language.startsWith('pt') ? 'Chuvinha' : 'Rain'}</span>}
+                {h.precip != null && h.precip > 0 && h.precip <= 30 && <span className="text-[10px] md:text-xs text-sky-100/70">•</span>}
               </div>
             ))}
           </div>

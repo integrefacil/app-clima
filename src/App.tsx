@@ -5,11 +5,15 @@ import { DailyList } from './components/DailyList'
 import { HeaderHero } from './components/HeaderHero'
 import { HourlyStrip } from './components/HourlyStrip'
 import { MarineModule } from './components/MarineModule'
+import { MarineWeekList } from './components/MarineWeekList'
 import { MetricGrid } from './components/MetricGrid'
 import { SearchBar } from './components/SearchBar'
 import { SunsetArc } from './components/SunsetArc'
-import { fetchForecast, fetchMarine, searchLocation, type GeocodeResult } from './services/api'
+import { fetchForecast, fetchMarineWithTides, searchLocation, type GeocodeResult } from './services/api'
+import { buildMarineWeek, mockMarineWeek } from './services/marineWeek'
 import { fmtTime } from './lib/format'
+import { getStorage, setStorage } from './lib/storage'
+import { addToHistory } from './services/history'
 
 type LocationState = { name: string; lat: number; lon: number }
 
@@ -32,12 +36,20 @@ const MOCK_DAILY = [
 
 export default function App() {
   const { t, i18n } = useTranslation()
-  const [loc, setLoc] = useState<LocationState>({ name: 'Jordão, Recife', lat: -8.09, lon: -34.9 })
+  const [loc, setLoc] = useState<LocationState>(() => {
+    try {
+      const raw = localStorage.getItem('app-clima:last-location')
+      if (raw) return JSON.parse(raw) as LocationState
+    } catch {}
+    return { name: 'Jordão, Recife', lat: -8.09, lon: -34.9 }
+  })
   const [forecast, setForecast] = useState<null | Awaited<ReturnType<typeof fetchForecast>>>(null)
-  const [marine, setMarine] = useState<null | Awaited<ReturnType<typeof fetchMarine>>>(null)
+  const [marine, setMarine] = useState<null | Awaited<ReturnType<typeof fetchMarineWithTides>>['marine']>(null)
+  const [stormglassTides, setStormglassTides] = useState<null | Awaited<ReturnType<typeof fetchMarineWithTides>>['tides']>(null)
   const [isBeach, setIsBeach] = useState(true)
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const [fromCache, setFromCache] = useState(false)
+  const [mainTab, setMainTab] = useState(() => getStorage('app-clima:tab:main', 'forecast'))
 
   const locale = i18n.language
 
@@ -47,8 +59,9 @@ export default function App() {
       setForecast(fc)
       setUpdatedAt(new Date())
       setFromCache(false)
-      const mr = await fetchMarine(latitude, longitude)
+      const { marine: mr, tides } = await fetchMarineWithTides(latitude, longitude)
       setMarine(mr)
+      setStormglassTides(tides)
       setIsBeach(!!mr)
     } catch {
       setFromCache(true)
@@ -60,7 +73,12 @@ export default function App() {
   }, [loc.lat, loc.lon, load])
 
   const onSelect = (r: GeocodeResult) => {
-    setLoc({ name: r.display_name.split(',').slice(0, 3).join(','), lat: parseFloat(r.lat), lon: parseFloat(r.lon) })
+    const next = { name: r.display_name.split(',').slice(0, 3).join(','), lat: parseFloat(r.lat), lon: parseFloat(r.lon) }
+    setLoc(next)
+    try {
+      localStorage.setItem('app-clima:last-location', JSON.stringify(next))
+    } catch {}
+    addToHistory(r)
   }
 
   const onSearchCb = useCallback((q: string) => searchLocation(q), [])
@@ -105,30 +123,71 @@ export default function App() {
     }
   }, [forecast])
 
+  // helpers plain — sem jargão
+  const plainWind = (speed: number, deg: number) => {
+    const s = speed < 5 ? (i18n.language.startsWith('pt') ? 'Calmo' : 'Calm') : speed < 15 ? (i18n.language.startsWith('pt') ? 'Brisa leve' : 'Light breeze') : speed < 25 ? (i18n.language.startsWith('pt') ? 'Vento moderado' : 'Moderate') : (i18n.language.startsWith('pt') ? 'Vento forte' : 'Strong')
+    const dirs = i18n.language.startsWith('pt') ? ['do norte','do nordeste','do leste','do sudeste','do sul','do sudoeste','do oeste','do noroeste'] : ['from north','from northeast','from east','from southeast','from south','from southwest','from west','from northwest']
+    const idx = Math.round(((deg % 360) / 45)) % 8
+    return { label: s, sub: dirs[idx] }
+  }
+  const plainHumidity = (h: number) => {
+    if (h < 40) return i18n.language.startsWith('pt') ? 'Sequinho' : 'Dry'
+    if (h < 60) return i18n.language.startsWith('pt') ? 'Agradável' : 'Comfortable'
+    if (h < 80) return i18n.language.startsWith('pt') ? 'Úmido' : 'Humid'
+    return i18n.language.startsWith('pt') ? 'Bem úmido' : 'Very humid'
+  }
+  const plainUV = (uv: number) => {
+    if (uv <= 2) return t('metrics.uvLow')
+    if (uv <= 5) return i18n.language.startsWith('pt') ? 'Bom de ficar fora' : 'Nice to stay out'
+    return t('metrics.uvModerate')
+  }
+
   const metrics = useMemo(() => {
     if (!forecast)
       return [
-        { icon: '💧', label: 'metrics.humidity', value: '79%', sub: t('metrics.humidityDesc'), detail: 'Umidade relativa do ar medida a 2m' },
-        { icon: '💨', label: 'metrics.wind', value: '21 km/h', sub: 'NE 21 km/h', detail: 'Velocidade e direção do vento a 10m' },
-        { icon: '🌡️', label: 'metrics.feelsLike', value: '23°', sub: '', detail: 'Sensação térmica aparente' },
-        { icon: '🧭', label: 'metrics.pressure', value: '1014.0 mb', sub: t('metrics.pressureDesc'), detail: 'Pressão ao nível do mar' },
-        { icon: '👁️', label: 'metrics.visibility', value: '10.00 km', sub: '', detail: 'Visibilidade horizontal' },
-        { icon: '☀️', label: 'metrics.uv', value: '2', sub: t('metrics.uvLow'), detail: 'Índice UV máximo do dia' },
+        { icon: '💧', label: 'metrics.humidity', value: i18n.language.startsWith('pt') ? 'Úmido' : 'Humid', sub: t('metrics.humidityDesc'), detail: i18n.language.startsWith('pt') ? 'Ar com bastante umidade, pode abafar' : 'Muggy air, drink water' },
+        { icon: '💨', label: 'metrics.wind', value: i18n.language.startsWith('pt') ? 'Brisa leve' : 'Light breeze', sub: i18n.language.startsWith('pt') ? 'vindo do nordeste' : 'from northeast', detail: i18n.language.startsWith('pt') ? 'Vento tranquilo para passear' : 'Calm enough to go out' },
+        { icon: '🌡️', label: 'metrics.feelsLike', value: '23°', sub: i18n.language.startsWith('pt') ? 'Quentinho gostoso' : 'Warm and nice', detail: i18n.language.startsWith('pt') ? 'Sensação de calor agradável' : 'Feels warm and nice' },
+        { icon: '🧭', label: 'metrics.pressure', value: i18n.language.startsWith('pt') ? 'Firme' : 'Steady', sub: t('metrics.pressureDesc'), detail: i18n.language.startsWith('pt') ? 'Tempo deve continuar assim' : 'Weather should stay like this' },
+        { icon: '👁️', label: 'metrics.visibility', value: i18n.language.startsWith('pt') ? 'Longe' : 'Far', sub: i18n.language.startsWith('pt') ? 'Dá para ver bem' : 'You can see far', detail: i18n.language.startsWith('pt') ? 'Sem neblina por perto' : 'No fog around' },
+        { icon: '☀️', label: 'metrics.uv', value: t('metrics.uvLow'), sub: i18n.language.startsWith('pt') ? 'Luz tranquila' : 'Soft light', detail: t('metrics.uvLow') },
       ]
     const c = forecast.current
     const d = forecast.daily
+    const w = plainWind(c.wind_speed_10m, c.wind_direction_10m)
     return [
-      { icon: '💧', label: 'metrics.humidity', value: `${Math.round(c.relative_humidity_2m)}%`, sub: t('metrics.humidityDesc'), detail: 'Umidade relativa a 2m' },
-      { icon: '💨', label: 'metrics.wind', value: `${Math.round(c.wind_speed_10m)} km/h`, sub: `${Math.round(c.wind_direction_10m)}°`, detail: `Vento ${Math.round(c.wind_speed_10m)} km/h direção ${Math.round(c.wind_direction_10m)}°` },
-      { icon: '🌡️', label: 'metrics.feelsLike', value: `${Math.round(c.apparent_temperature)}°`, sub: '', detail: 'Sensação térmica calculada' },
-      { icon: '🧭', label: 'metrics.pressure', value: '1014 mb', sub: t('metrics.pressureDesc'), detail: 'Pressão ao nível do mar' },
-      { icon: '👁️', label: 'metrics.visibility', value: '10.00 km', sub: '', detail: 'Estimativa de visibilidade' },
-      { icon: '☀️', label: 'metrics.uv', value: String(Math.round(d.uv_index_max?.[0] ?? 0)), sub: (d.uv_index_max?.[0] ?? 0) > 5 ? t('metrics.uvModerate') : t('metrics.uvLow'), detail: `UV máximo hoje ${d.uv_index_max?.[0] ?? 0}` },
+      { icon: '💧', label: 'metrics.humidity', value: plainHumidity(c.relative_humidity_2m), sub: c.relative_humidity_2m > 75 ? t('metrics.humidityDesc') : (i18n.language.startsWith('pt') ? 'Ar agradável' : 'Nice air'), detail: i18n.language.startsWith('pt') ? 'Ar com umidade, pode abafar um pouco' : 'Humid air' },
+      { icon: '💨', label: 'metrics.wind', value: w.label, sub: w.sub, detail: i18n.language.startsWith('pt') ? 'Vento para sentir no rosto' : 'Wind you can feel' },
+      { icon: '🌡️', label: 'metrics.feelsLike', value: `${Math.round(c.apparent_temperature)}°`, sub: c.apparent_temperature > 28 ? (i18n.language.startsWith('pt') ? 'Bem quentinho' : 'Quite warm') : c.apparent_temperature < 18 ? (i18n.language.startsWith('pt') ? 'Fresquinho' : 'Cool') : (i18n.language.startsWith('pt') ? 'Agradável' : 'Pleasant'), detail: i18n.language.startsWith('pt') ? 'Como o corpo sente lá fora' : 'How it feels outside' },
+      { icon: '🧭', label: 'metrics.pressure', value: i18n.language.startsWith('pt') ? 'Firme' : 'Steady', sub: t('metrics.pressureDesc'), detail: i18n.language.startsWith('pt') ? 'Tempo firme' : 'Steady weather' },
+      { icon: '👁️', label: 'metrics.visibility', value: i18n.language.startsWith('pt') ? 'Longe' : 'Far', sub: i18n.language.startsWith('pt') ? 'Dá para ver bem' : 'Clear view', detail: i18n.language.startsWith('pt') ? 'Sem neblina' : 'No fog' },
+      { icon: '☀️', label: 'metrics.uv', value: plainUV(d.uv_index_max?.[0] ?? 0), sub: (d.uv_index_max?.[0] ?? 0) > 5 ? (i18n.language.startsWith('pt') ? 'Sol forte' : 'Strong sun') : (i18n.language.startsWith('pt') ? 'Sol tranquilo' : 'Calm sun'), detail: plainUV(d.uv_index_max?.[0] ?? 0) },
     ]
-  }, [forecast, t])
+  }, [forecast, t, i18n.language])
 
   const sunrise = forecast ? fmtTime(forecast.daily.sunrise[0], locale) : '05:18'
   const sunset = forecast ? fmtTime(forecast.daily.sunset[0], locale) : '17:17'
+
+  const marineWeek = useMemo(() => {
+    if (!marine || !forecast) return mockMarineWeek()
+    try {
+      const week = buildMarineWeek({
+        marineHourlyTime: marine.hourly.time,
+        marineHourlyWave: (marine.hourly.wave_height as number[] | undefined) ?? null,
+        marineSeaLevel: marine.hourly.sea_level_height_msl,
+        forecastDailyTime: forecast.daily.time,
+        forecastDailyPrecip: forecast.daily.precipitation_sum,
+        forecastHourlyWind: null,
+        stormglassTides: stormglassTides ?? undefined,
+        locale,
+      })
+      // ordena por data cronológica para exibição
+      week.days.sort((a, b) => a.date.localeCompare(b.date))
+      return week
+    } catch {
+      return mockMarineWeek()
+    }
+  }, [marine, forecast, stormglassTides, locale])
 
   return (
     <div className="min-h-screen">
@@ -184,8 +243,8 @@ export default function App() {
           <SearchBar onSelect={onSelect} onSearch={onSearchCb} />
         </div>
 
-        {/* Tabs */}
-        <Tabs.Root defaultValue="forecast" className="space-y-3">
+        {/* Tabs — posição salva em localStorage */}
+        <Tabs.Root value={mainTab} onValueChange={(v) => { setMainTab(v); setStorage('app-clima:tab:main', v) }} className="space-y-3">
           <Tabs.List className="glass flex rounded-full p-1 gap-1 max-w-[420px] md:max-w-[360px]">
             <Tabs.Trigger value="forecast" className="flex-1 py-1.5 rounded-full text-xs md:text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-sky-900 text-white/70 data-[state=active]:shadow">
               {t('app.title')}
@@ -270,9 +329,10 @@ export default function App() {
             </div>
           </Tabs.Content>
 
-          <Tabs.Content value="marine" className="focus:outline-none">
+          <Tabs.Content value="marine" className="focus:outline-none space-y-4">
+            {/* Resumo atual */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-              <div className="lg:col-span-8">
+              <div className="lg:col-span-5">
                 <MarineModule
                   waveHeight={marine?.current.wave_height ?? null}
                   wavePeriod={marine?.current.wave_period ?? null}
@@ -280,13 +340,15 @@ export default function App() {
                   isBeach={isBeach}
                 />
               </div>
-              <div className="lg:col-span-4 glass p-4 text-xs md:text-sm text-white/60 space-y-2">
-                <p className="font-medium text-white/80">{t('marine.title')}</p>
+              <div className="lg:col-span-7 glass p-4 text-xs md:text-sm text-white/60 space-y-2">
+                <p className="font-medium text-white/80">{isBeach ? (i18n.language.startsWith('pt') ? 'Como está o mar agora' : 'How the sea is now') : t('marine.noData')}</p>
                 <Separator.Root className="h-px bg-white/10" />
-                <p>{isBeach ? `Ondas ${marine?.current.wave_height?.toFixed(1) ?? '--'} m • Período ${marine?.current.wave_period?.toFixed(1) ?? '--'} s` : t('marine.noData')}</p>
-                <p className="text-[11px] text-white/40">Cache 60min • Open-Meteo Marine</p>
+                <p>{isBeach ? (marine?.current.wave_height != null ? (marine.current.wave_height < 0.5 ? t('marine.waveSmall') : marine.current.wave_height < 1.1 ? t('marine.waveMedium') : t('marine.waveBig')) : '--') : t('marine.noData')}</p>
+                <p className="text-[11px] text-white/40">{t('marine.disclaimer')}</p>
               </div>
             </div>
+            {/* 7 dias com médias + marés */}
+            <MarineWeekList days={marineWeek.days} source={marineWeek.source} isBeach={isBeach} />
           </Tabs.Content>
         </Tabs.Root>
 
@@ -302,7 +364,7 @@ export default function App() {
               <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 glass-strong p-6 w-[90%] max-w-sm z-50">
                 <Dialog.Title className="text-sm font-medium">{t('footer.report')}</Dialog.Title>
                 <Dialog.Description className="text-xs text-white/60 mt-2">
-                  {i18n.language.startsWith('pt') ? 'Obrigado pelo feedback. Os dados vêm de Open-Meteo e Nominatim.' : 'Thanks for feedback. Data from Open-Meteo and Nominatim.'}
+                  {i18n.language.startsWith('pt') ? 'Obrigado! Sua opinião ajuda a melhorar.' : 'Thanks! Your feedback helps us improve.'}
                 </Dialog.Description>
                 <Dialog.Close asChild>
                   <button className="mt-4 w-full glass py-2 rounded-xl text-sm">OK</button>

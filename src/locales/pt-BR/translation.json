@@ -1,71 +1,104 @@
 {
   "app": {
     "title": "Clima",
-    "subtitle": "Planejador de viagens — praia & campo"
+    "subtitle": "Praia ou campo, sem complicação"
   },
   "search": {
     "placeholder": "Para onde você vai hoje?",
-    "searching": "Buscando...",
-    "noResults": "Nenhum resultado encontrado",
-    "recent": "Recentes",
-    "detecting": "Detectando localização..."
+    "searching": "Procurando...",
+    "noResults": "Não achamos esse lugar",
+    "recent": "Vistos antes",
+    "clear": "Limpar",
+    "detecting": "Vendo onde você está..."
   },
   "header": {
-    "feelsLike": "Sensação {{temp}}°",
-    "overcast": "Encoberto",
-    "clear": "Limpo",
-    "partlyCloudy": "Parcialmente nublado",
-    "description": "Nebulosidade manhã, seguida de sol a tarde. Máximas de {{max}} a {{max2}}°C e mínimas de {{min}} a {{min2}}°C.",
-    "high": "Máx",
-    "low": "Mín"
+    "feelsLike": "Parece {{temp}}°",
+    "overcast": "Céu fechado",
+    "clear": "Céu limpo",
+    "partlyCloudy": "Sol com algumas nuvens",
+    "description": "Manhã com mais nuvens e tarde com sol. Tarde quente e noite agradável.",
+    "high": "Tarde",
+    "low": "Noite"
   },
   "hourly": {
-    "title": "Previsão por hora",
+    "title": "Como fica nas próximas horas",
     "now": "Agora"
   },
   "daily": {
-    "title": "Previsão para 10 dias",
+    "title": "Próximos dias",
     "today": "Hoje",
     "tomorrow": "Amanhã",
-    "moreDays": "Previsão para 10 dias"
+    "moreDays": "Próximos dias"
   },
   "sunset": {
-    "sunsetAt": "O pôr do sol será às {{time}}",
-    "sunrise": "Nascer do sol",
-    "sunset": "Pôr do sol"
+    "sunsetAt": "O sol se põe às {{time}}",
+    "sunrise": "Sol nascendo",
+    "sunset": "Sol se pondo"
   },
   "sport": {
-    "title": "Corrida",
-    "status": "Limpo",
-    "desc": "Clima limpo para corrida neste momento"
+    "title": "Caminhada",
+    "status": "Dia bom",
+    "desc": "Tempo gostoso para sair"
   },
   "metrics": {
-    "humidity": "Umidade",
-    "humidityDesc": "Há uma brisa leve",
+    "humidity": "Ar",
+    "humidityDesc": "Um pouquinho abafado",
     "wind": "Vento",
-    "windGust": "Rajadas {{value}} km/h",
-    "feelsLike": "Sensação térmica",
-    "pressure": "Pressão",
-    "pressureDesc": "Aumentando rapidamente",
-    "visibility": "Visibilidade",
-    "uv": "Índice UV",
-    "uvLow": "Baixo",
-    "uvModerate": "Moderado",
-    "precipitation": "Precipitação",
-    "dewPoint": "Ponto de orvalho"
+    "windGust": "Vento um pouco mais forte às vezes",
+    "feelsLike": "Sensação",
+    "pressure": "Tempo",
+    "pressureDesc": "Deve continuar assim",
+    "visibility": "Visão",
+    "uv": "Sol",
+    "uvLow": "Tranquilo",
+    "uvModerate": "Forte, bom passar protetor",
+    "precipitation": "Chuva",
+    "dewPoint": "Ar úmido"
   },
   "marine": {
-    "title": "Ondas e marés",
-    "waveHeight": "Altura da onda",
-    "wavePeriod": "Período",
-    "waveDirection": "Direção",
-    "tideHigh": "Preamar",
-    "tideLow": "Baixa-mar",
-    "noData": "Sem dados marítimos para esta localidade"
+    "title": "Mar",
+    "waveHeight": "Ondas",
+    "wavePeriod": "Ritmo",
+    "waveDirection": "De onde vem",
+    "tideHigh": "Maré cheia",
+    "tideLow": "Maré seca",
+    "noData": "Por aqui não tem mar",
+    "weekTitle": "Como fica o mar nos próximos dias",
+    "avgHeight": "Tamanho",
+    "waveAvg": "Ondas no dia",
+    "waveMax": "Maior onda",
+    "tideHeight": "Água",
+    "avgHeightDesc": "Tamanho das ondas ao longo do dia",
+    "bestDay": "Melhor dia",
+    "bestBadge": "Melhor",
+    "good": "Ótimo",
+    "moderate": "Bom",
+    "poor": "Mais agitado",
+    "bestTime": "Melhor hora para entrar",
+    "showHours": "Ver horas da maré",
+    "noTideHours": "Sem horário por agora",
+    "cacheNote": "",
+    "loading": "Buscando o mar...",
+    "disclaimer": "Maré estimada. Para navegar, use a tábua oficial.",
+    "noTideData": "Estimativa",
+    "tabSummary": "Resumo",
+    "tabWaves": "Ondas",
+    "tabTides": "Maré",
+    "summaryGreat": "Ótimo para banho",
+    "summaryGood": "Bom para banho",
+    "summaryOk": "Dá para ir",
+    "summaryPoor": "Mais agitado, melhor evitar",
+    "waveSmall": "Ondinhas bem pequenas",
+    "waveMedium": "Ondas médias",
+    "waveBig": "Ondas grandes",
+    "tideHighPlain": "Maré cheia — água mais alta",
+    "tideLowPlain": "Maré seca — areia grande",
+    "bestTimePlain": "Melhor entrar",
+    "noDataPlain": "Sem mar por aqui"
   },
   "cache": {
-    "stale": "Dados em cache — offline",
-    "updatedAt": "Atualizado {{time}}",
+    "stale": "Sem internet, mostrando o último que vimos",
+    "updatedAt": "Visto {{time}}",
     "justNow": "agora mesmo"
   },
   "geo": {
@@ -75,28 +108,28 @@
   },
   "weather": {
     "0": "Céu limpo",
-    "1": "Predominantemente limpo",
-    "2": "Parcialmente nublado",
-    "3": "Encoberto",
+    "1": "Quase limpo",
+    "2": "Algumas nuvens",
+    "3": "Céu bem fechado",
     "45": "Nevoeiro",
-    "48": "Nevoeiro com geada",
-    "51": "Chuvisco leve",
-    "53": "Chuvisco moderado",
-    "55": "Chuvisco forte",
-    "61": "Chuva leve",
-    "63": "Chuva moderada",
+    "48": "Nevoeiro",
+    "51": "Garoa leve",
+    "53": "Garoa",
+    "55": "Garoa mais forte",
+    "61": "Chuvinha",
+    "63": "Chuva",
     "65": "Chuva forte",
     "71": "Neve leve",
-    "73": "Neve moderada",
+    "73": "Neve",
     "75": "Neve forte",
     "80": "Pancadas leves",
-    "81": "Pancadas moderadas",
+    "81": "Pancadas",
     "82": "Pancadas fortes",
-    "95": "Tempestade",
-    "96": "Tempestade com granizo"
+    "95": "Tempo fechado com trovão",
+    "96": "Trovão com chuva forte"
   },
   "footer": {
-    "report": "Reportar informação incorreta",
-    "source": "The Weather Channel"
+    "report": "Algo parece errado?",
+    "source": "Dados de clima e mar"
   }
 }

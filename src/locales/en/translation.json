@@ -1,71 +1,104 @@
 {
   "app": {
     "title": "Weather",
-    "subtitle": "Travel planner — beach & countryside"
+    "subtitle": "Beach or countryside, simple"
   },
   "search": {
     "placeholder": "Where are you going today?",
-    "searching": "Searching...",
-    "noResults": "No results found",
+    "searching": "Looking...",
+    "noResults": "We didn't find that place",
     "recent": "Recent",
-    "detecting": "Detecting location..."
+    "clear": "Clear",
+    "detecting": "Finding your place..."
   },
   "header": {
     "feelsLike": "Feels like {{temp}}°",
-    "overcast": "Overcast",
+    "overcast": "Cloudy",
     "clear": "Clear",
-    "partlyCloudy": "Partly cloudy",
-    "description": "Cloudy morning, followed by afternoon sun. High {{max}}° to {{max2}}° and low {{min}}° to {{min2}}°.",
-    "high": "H",
-    "low": "L"
+    "partlyCloudy": "Sun and clouds",
+    "description": "Cloudy morning and sunny afternoon. Warm day, nice evening.",
+    "high": "Day",
+    "low": "Night"
   },
   "hourly": {
-    "title": "Hourly forecast",
+    "title": "Next hours",
     "now": "Now"
   },
   "daily": {
-    "title": "10-day forecast",
+    "title": "Next days",
     "today": "Today",
     "tomorrow": "Tomorrow",
-    "moreDays": "10-day forecast"
+    "moreDays": "Next days"
   },
   "sunset": {
-    "sunsetAt": "Sunset will be at {{time}}",
+    "sunsetAt": "Sun sets at {{time}}",
     "sunrise": "Sunrise",
     "sunset": "Sunset"
   },
   "sport": {
-    "title": "Running",
-    "status": "Clear",
-    "desc": "Clear weather for running right now"
+    "title": "Walk",
+    "status": "Nice day",
+    "desc": "Nice weather to go out"
   },
   "metrics": {
-    "humidity": "Humidity",
-    "humidityDesc": "There is low haze",
+    "humidity": "Air",
+    "humidityDesc": "A bit muggy",
     "wind": "Wind",
-    "windGust": "Gusts {{value}} km/h",
-    "feelsLike": "Feels like",
-    "pressure": "Pressure",
-    "pressureDesc": "Rising rapidly",
-    "visibility": "Visibility",
-    "uv": "UV Index",
-    "uvLow": "Low",
-    "uvModerate": "Moderate",
-    "precipitation": "Precipitation",
-    "dewPoint": "Dew point"
+    "windGust": "A bit gusty at times",
+    "feelsLike": "Feels",
+    "pressure": "Weather",
+    "pressureDesc": "Should stay like this",
+    "visibility": "View",
+    "uv": "Sun",
+    "uvLow": "Easy",
+    "uvModerate": "Strong, better use sunscreen",
+    "precipitation": "Rain",
+    "dewPoint": "Muggy air"
   },
   "marine": {
-    "title": "Waves & tides",
-    "waveHeight": "Wave height",
-    "wavePeriod": "Period",
-    "waveDirection": "Direction",
+    "title": "Sea",
+    "waveHeight": "Waves",
+    "wavePeriod": "Rhythm",
+    "waveDirection": "Coming from",
     "tideHigh": "High tide",
     "tideLow": "Low tide",
-    "noData": "No marine data for this location"
+    "noData": "No sea around here",
+    "weekTitle": "How the sea looks next days",
+    "avgHeight": "Size",
+    "waveAvg": "Waves today",
+    "waveMax": "Biggest wave",
+    "tideHeight": "Water",
+    "avgHeightDesc": "Wave size through the day",
+    "bestDay": "Best day",
+    "bestBadge": "Best",
+    "good": "Great",
+    "moderate": "Good",
+    "poor": "Rough",
+    "bestTime": "Best time to go in",
+    "showHours": "See tide times",
+    "noTideHours": "No times for now",
+    "cacheNote": "",
+    "loading": "Checking the sea...",
+    "disclaimer": "Tide is estimated. Use official chart for sailing.",
+    "noTideData": "Estimate",
+    "tabSummary": "Summary",
+    "tabWaves": "Waves",
+    "tabTides": "Tide",
+    "summaryGreat": "Great for swimming",
+    "summaryGood": "Good for swimming",
+    "summaryOk": "You can go",
+    "summaryPoor": "Rough, better skip",
+    "waveSmall": "Very small waves",
+    "waveMedium": "Medium waves",
+    "waveBig": "Big waves",
+    "tideHighPlain": "High tide — water higher",
+    "tideLowPlain": "Low tide — more sand",
+    "bestTimePlain": "Best to go",
+    "noDataPlain": "No sea here"
   },
   "cache": {
-    "stale": "Stale data — offline",
-    "updatedAt": "Updated {{time}}",
+    "stale": "Offline, showing last we saw",
+    "updatedAt": "Seen {{time}}",
     "justNow": "just now"
   },
   "geo": {
@@ -74,29 +107,29 @@
     "auto": "Auto"
   },
   "weather": {
-    "0": "Clear sky",
-    "1": "Mainly clear",
-    "2": "Partly cloudy",
-    "3": "Overcast",
+    "0": "Clear",
+    "1": "Almost clear",
+    "2": "Some clouds",
+    "3": "Very cloudy",
     "45": "Fog",
-    "48": "Depositing fog",
+    "48": "Fog",
     "51": "Light drizzle",
-    "53": "Moderate drizzle",
-    "55": "Dense drizzle",
-    "61": "Slight rain",
-    "63": "Moderate rain",
+    "53": "Drizzle",
+    "55": "Heavier drizzle",
+    "61": "Light rain",
+    "63": "Rain",
     "65": "Heavy rain",
-    "71": "Slight snow",
-    "73": "Moderate snow",
+    "71": "Light snow",
+    "73": "Snow",
     "75": "Heavy snow",
-    "80": "Slight showers",
-    "81": "Moderate showers",
-    "82": "Violent showers",
-    "95": "Thunderstorm",
-    "96": "Thunderstorm with hail"
+    "80": "Light showers",
+    "81": "Showers",
+    "82": "Heavy showers",
+    "95": "Stormy",
+    "96": "Storm with heavy rain"
   },
   "footer": {
-    "report": "Report incorrect information",
-    "source": "The Weather Channel"
+    "report": "Something seems off?",
+    "source": "Weather and sea data"
   }
 }

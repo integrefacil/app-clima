@@ -4,8 +4,15 @@ import { wmoIcon } from '../lib/wmo'
 
 type Day = { label: string; code: number; max: number; min: number; precip: number }
 
+function plainRain(precip: number, lang: string) {
+  if (precip <= 0.2) return lang.startsWith('pt') ? 'Sem chuva' : 'No rain'
+  if (precip < 2) return lang.startsWith('pt') ? 'Chuvinha' : 'Light rain'
+  if (precip < 6) return lang.startsWith('pt') ? 'Pode chover' : 'May rain'
+  return lang.startsWith('pt') ? 'Chuva' : 'Rain'
+}
+
 export function DailyList({ days }: { days: Day[] }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const maxTemp = Math.max(...days.map((d) => d.max))
   const minTemp = Math.min(...days.map((d) => d.min))
 
@@ -22,7 +29,7 @@ export function DailyList({ days }: { days: Day[] }) {
               <div className="flex items-center gap-2 py-2.5 text-sm md:text-base">
                 <span className="w-12 md:w-16 text-white/90">{d.label}</span>
                 <span aria-hidden className="text-base md:text-lg">{wmoIcon(d.code)}</span>
-                <span className="w-8 text-center text-sky-200 text-xs md:text-sm">{Math.round(d.precip)}%</span>
+                <span className="w-[84px] md:w-[110px] text-center text-sky-100 text-[11px] md:text-xs truncate" title={`${d.precip}mm`}>{plainRain(d.precip, i18n.language)}</span>
                 <div className="flex-1 relative h-1 md:h-1.5 bg-white/15 rounded-full mx-2">
                   <div className="absolute h-1 md:h-1.5 bg-gradient-to-r from-sky-300 to-orange-400 rounded-full" style={{ left: `${left}%`, width: `${Math.max(8, width)}%` }} />
                 </div>

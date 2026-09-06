@@ -33,9 +33,17 @@
 - [x] Umidade, vento, sensação, pressão, visibilidade, UV traduzidos
 - [x] Toggle EN/PT-BR persiste localStorage
 
-## Etapa 6 — Marine
+## Etapa 6 — Marine (básico)
 - [x] Fetch marine 60min, `isBeach` auto + toggle manual
 - [x] Campo oculta ondas/marés, praia mostra altura/período/direção
+
+## Etapa 8 — Marine 7 dias + marés + média (novo)
+- [x] `fetchMarine` com `hourly wave_height,sea_level + daily wave_height_max + forecast_days=7` (cache 60min) + `fetchStormglassTides` opcional via `VITE_STORMGLASS_KEY`
+- [x] `buildMarineWeek` calcula `waveAvg`/`waveMax` por dia, `tides` via Stormglass ou `calcTidesFromSeaLevel`, `scoreBeachDay` 0-100 e `bestSlot` 07-11/14-17
+- [x] `MarineWeekList` lista 7 dias `grid 1→2 cols`, cada card mostra `waveAvg`/`waveMax`, `tideHigh`/`tideLow` com altura m + hora (Intl), badge Melhor/Bom/Moderado, Accordion com todos horários + hourly onda
+- [x] `Tabs marine` agora mostra resumo atual + `MarineWeekList`; fallback `mockMarineWeek` se offline; banner “estimado” quando sem Stormglass
+- [x] i18n `marine.weekTitle`, `bestDay`, `bestTime`, etc. em `en`/`pt-BR`
+- [ ] Ver manual: buscar `Suape, PE` → aba Marine mostra 7 cards com alturas e horários; melhor dia com maior score em destaque; expandir dia mostra 3-4 marés
 
 ## Etapa 7 — PWA
 - [x] `vite-plugin-pwa` autoUpdate, runtimeCaching NetworkFirst APIs
