@@ -70,6 +70,19 @@ function viewToHash(v: HashView): string {
   return '#/clima'
 }
 
+function scrollToTop() {
+  // desativa restauração automática do browser (mantém posição da view anterior)
+  try {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+  } catch {}
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior })
+  // fallback para browsers sem suporte a 'instant'
+  document.documentElement.scrollTop = 0
+  document.body.scrollTop = 0
+}
+
 export function useHashView() {
   const [view, setView] = useState<HashView>(() => {
     if (typeof window === 'undefined') return DEFAULT_VIEW
@@ -90,10 +103,26 @@ export function useHashView() {
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
 
+  // sempre volta ao topo ao trocar de rota (corrige posição herdada da view anterior)
+  useEffect(() => {
+    scrollToTop()
+  }, [view.tab, view.screen])
+
+  // garante manual também no mount inicial
+  useEffect(() => {
+    try {
+      if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual'
+    } catch {}
+  }, [])
+
   const navigate = useCallback((next: HashView | string) => {
     const hash = typeof next === 'string' ? next : viewToHash(next)
     if (window.location.hash !== hash) {
       window.location.hash = hash
+      // scroll imediato otimista — hashchange também vai disparar o efeito de view
+      scrollToTop()
+    } else {
+      scrollToTop()
     }
   }, [])
 
@@ -112,11 +141,15 @@ export function useHashView() {
           const now = parseHash(window.location.hash)
           if (now.screen !== 'dashboard') {
             navigate({ tab: now.tab, screen: 'dashboard' })
+          } else {
+            scrollToTop()
           }
         }, 350)
       } else {
         navigate({ tab: current.tab, screen: 'dashboard' })
       }
+    } else {
+      scrollToTop()
     }
   }, [navigate])
 

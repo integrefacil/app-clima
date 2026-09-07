@@ -73,7 +73,7 @@ export function SunDetail({ location, temp, code, max, min, feelsLike, humidity,
       </div>
 
       {/* toggle Sol/Lua — auto por horário mas permite inspecionar o outro */}
-      <div className="flex gap-1 p-1 glass w-fit">
+      <div className="flex gap-1 p-1 glass !rounded-full w-fit">
         <button
           onClick={() => setVariant('sun')}
           className={`px-3 py-1.5 rounded-full text-xs md:text-sm transition-colors ${isSun ? 'bg-white text-sky-900' : 'text-white/60 hover:text-white'}`}

@@ -91,8 +91,32 @@ a[aria-disabled='true'],
   }
 }
 
+/* skeleton shimmer opcional */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 25%, rgba(255, 255, 255, 0.16) 37%, rgba(255, 255, 255, 0.08) 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .view-enter {
+    animation: none;
+  }
+
+  .skeleton-shimmer {
+    animation: none;
+  }
+
+  .animate-pulse {
     animation: none;
   }
 }

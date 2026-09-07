@@ -51,7 +51,7 @@ export function MarineWeekList({ days }: Props) {
       <Tabs.Root value={marineTab} onValueChange={(v) => { setMarineTab(v); setStorage('app-clima:tab:marine', v) }} className="space-y-3">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <p className="text-xs md:text-sm text-white/60 uppercase tracking-widest">{t('marine.weekTitle')}</p>
-          <Tabs.List className="glass flex rounded-full p-1 gap-1 self-start md:self-auto">
+          <Tabs.List className="glass !rounded-full flex p-1 gap-1 self-start md:self-auto">
             <Tabs.Trigger value="resumo" className="px-3 py-1 rounded-full text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-sky-900 text-white/70">{t('marine.tabSummary')}</Tabs.Trigger>
             <Tabs.Trigger value="ondas" className="px-3 py-1 rounded-full text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-sky-900 text-white/70">{t('marine.tabWaves')}</Tabs.Trigger>
             <Tabs.Trigger value="mares" className="px-3 py-1 rounded-full text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-sky-900 text-white/70">{t('marine.tabTides')}</Tabs.Trigger>
@@ -71,14 +71,14 @@ export function MarineWeekList({ days }: Props) {
               </p>
             </div>
           )}
-          <div className="overflow-x-auto -mx-3 md:mx-0">
-            <table className="w-full text-sm border-collapse">
+          <div className="overflow-x-auto -mx-3 md:mx-0 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.28)_rgba(255,255,255,0.07)]">
+            <table className="w-full text-sm border-collapse min-w-[460px]">
               <thead>
                 <tr className="text-[11px] text-white/40">
-                  <th className="text-left font-normal px-2 md:px-3 py-2 w-28 md:w-36">Dia</th>
-                  <th className="text-center font-normal px-2 py-2">Como está</th>
-                  <th className="text-center font-normal px-2 md:px-3 py-2 w-24 md:w-32 hidden md:table-cell">{t('marine.bestTimePlain')}</th>
-                  <th className="text-center font-normal px-2 md:px-3 py-2 w-20">Avaliação</th>
+                  <th className="text-left font-normal px-2 md:px-3 py-2 w-28 md:w-36 whitespace-nowrap">Dia</th>
+                  <th className="text-center font-normal px-2 py-2 whitespace-nowrap">Como está</th>
+                  <th className="text-center font-normal px-2 md:px-3 py-2 w-24 md:w-32 whitespace-nowrap">{t('marine.bestTimePlain')}</th>
+                  <th className="text-center font-normal px-2 md:px-3 py-2 w-20 whitespace-nowrap">Avaliação</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
@@ -87,10 +87,10 @@ export function MarineWeekList({ days }: Props) {
                   const label = dayLabel(idx, d.date, locale, t as never)
                   return (
                     <tr key={d.date} className={isBest ? 'bg-white/10' : ''}>
-                      <td className={`px-2 md:px-3 py-3 ${isBest ? 'font-semibold text-white' : 'text-white/90'}`}>{label}</td>
-                      <td className="px-2 py-3 text-center truncate max-w-[160px]">{summaryForScore(d.score, t as never)}</td>
-                      <td className="px-2 md:px-3 py-3 text-center text-xs text-white/60 hidden md:table-cell">{d.bestSlot ?? '--'}</td>
-                      <td className="px-2 md:px-3 py-3 text-center">
+                      <td className={`px-2 md:px-3 py-3 whitespace-nowrap ${isBest ? 'font-semibold text-white' : 'text-white/90'}`}>{label}</td>
+                      <td className="px-2 py-3 text-center whitespace-nowrap max-w-[160px]">{summaryForScore(d.score, t as never)}</td>
+                      <td className="px-2 md:px-3 py-3 text-center text-xs text-white/60 whitespace-nowrap">{d.bestSlot ?? '--'}</td>
+                      <td className="px-2 md:px-3 py-3 text-center whitespace-nowrap">
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${isBest ? 'bg-white text-sky-900' : d.score >= 70 ? 'bg-emerald-400 text-sky-900' : d.score >= 50 ? 'bg-yellow-200 text-sky-900' : 'bg-white/15 text-white/60'}`}>
                           {d.score >= 75 ? t('marine.good') : d.score >= 50 ? t('marine.moderate') : t('marine.poor')}
                         </span>
@@ -135,17 +135,17 @@ export function MarineWeekList({ days }: Props) {
           </div>
         </Tabs.Content>
 
-        {/* MARÉS — tabela colunas com horários — cabeçalhos curtos e colunas auto */}
+        {/* MARÉS — tabela única com 4 marés — scroll horizontal no mobile, sem duplicação */}
         <Tabs.Content value="mares" className="focus:outline-none">
-          <div className="overflow-x-auto -mx-3 md:mx-0">
-            <table className="w-full text-sm border-collapse table-auto">
+          <div className="overflow-x-auto -mx-3 md:mx-0 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.28)_rgba(255,255,255,0.07)]">
+            <table className="w-full text-sm border-collapse table-auto min-w-[520px]">
               <thead>
                 <tr className="text-[11px] text-white/40">
                   <th className="text-left font-normal px-3 py-2 whitespace-nowrap">Dia</th>
                   <th className="text-center font-normal px-3 py-2 whitespace-nowrap">1ª</th>
                   <th className="text-center font-normal px-3 py-2 whitespace-nowrap">2ª</th>
-                  <th className="text-center font-normal px-3 py-2 whitespace-nowrap hidden md:table-cell">3ª</th>
-                  <th className="text-center font-normal px-3 py-2 whitespace-nowrap hidden md:table-cell">4ª</th>
+                  <th className="text-center font-normal px-3 py-2 whitespace-nowrap">3ª</th>
+                  <th className="text-center font-normal px-3 py-2 whitespace-nowrap">4ª</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
@@ -163,8 +163,8 @@ export function MarineWeekList({ days }: Props) {
                       <td className={`px-3 py-3 whitespace-nowrap ${isBest ? 'font-semibold text-white' : 'text-white/90'}`}>{label}</td>
                       <td className="px-3 py-3 text-center font-medium text-white whitespace-nowrap">{cell(0)}</td>
                       <td className="px-3 py-3 text-center font-medium text-white whitespace-nowrap">{cell(1)}</td>
-                      <td className="px-3 py-3 text-center font-medium text-white/70 hidden md:table-cell whitespace-nowrap">{cell(2)}</td>
-                      <td className="px-3 py-3 text-center font-medium text-white/70 hidden md:table-cell whitespace-nowrap">{cell(3)}</td>
+                      <td className="px-3 py-3 text-center font-medium text-white/70 whitespace-nowrap">{cell(2)}</td>
+                      <td className="px-3 py-3 text-center font-medium text-white/70 whitespace-nowrap">{cell(3)}</td>
                     </tr>
                   )
                 })}
@@ -172,35 +172,6 @@ export function MarineWeekList({ days }: Props) {
             </table>
           </div>
           <p className="text-[11px] text-white/30 text-center mt-3">{t('marine.disclaimer')}</p>
-          <div className="md:hidden mt-3 overflow-x-auto -mx-3">
-            <table className="w-full text-xs border-collapse table-auto">
-              <thead>
-                <tr className="text-[11px] text-white/30">
-                  <th className="text-left font-normal px-3 py-1 whitespace-nowrap">Dia</th>
-                  <th className="text-center font-normal px-3 py-1 whitespace-nowrap">3ª</th>
-                  <th className="text-center font-normal px-3 py-1 whitespace-nowrap">4ª</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {days.map((d, idx) => {
-                  const label = dayLabel(idx, d.date, locale, t as never)
-                  const tides = d.tides.slice(0, 4)
-                  const cell = (i: number) => {
-                    const td = tides[i]
-                    if (!td) return '--'
-                    return `${td.type === 'high' ? '▲' : '▼'} ${fmtTime(td.time, locale)}`
-                  }
-                  return (
-                    <tr key={d.date}>
-                      <td className="px-3 py-2 text-white/60 whitespace-nowrap">{label}</td>
-                      <td className="px-3 py-2 text-center text-white/70 whitespace-nowrap">{cell(2)}</td>
-                      <td className="px-3 py-2 text-center text-white/70 whitespace-nowrap">{cell(3)}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
         </Tabs.Content>
       </Tabs.Root>
     </div>

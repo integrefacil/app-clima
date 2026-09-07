@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Popover, ScrollArea } from 'radix-ui'
 import type { GeocodeResult } from '../services/api'
 import { getHistory, removeFromHistory, clearHistory, type HistoryItem } from '../services/history'
+import { SearchResultsSkeleton } from './skeletons/SearchSkeleton'
 
 type Props = {
   onSelect: (r: GeocodeResult) => void
@@ -55,9 +56,10 @@ export function SearchBar({ onSelect, onSearch }: Props) {
 
   const showResults = q.trim().length >= 3 && results.length > 0
   const showHistory = focused && history.length > 0 && !showResults
+  const showSkeleton = focused && loading && q.trim().length >= 3
 
-  // aberto se focado e tiver algo para mostrar: resultados quando digitando, histórico quando vazio/parado
-  const isOpen = focused && (showResults || showHistory)
+  // aberto se focado e tiver algo para mostrar: resultados quando digitando, histórico quando vazio/parado, skeleton enquanto busca
+  const isOpen = focused && (showResults || showHistory || showSkeleton)
 
   return (
     <Popover.Root open={isOpen} onOpenChange={(o) => { if (!o) setFocused(false) }}>
@@ -82,7 +84,7 @@ export function SearchBar({ onSelect, onSearch }: Props) {
             className="flex-1 bg-transparent outline-none placeholder:text-white/50 text-sm"
             aria-label={t('search.placeholder')}
           />
-          {loading && <span className="text-xs text-white/60">{t('search.searching')}</span>}
+          {loading && <span className="size-4 rounded-full border-2 border-white/20 border-t-white/60 animate-spin" aria-label={t('search.searching')} />}
         </div>
       </Popover.Anchor>
 
@@ -102,6 +104,8 @@ export function SearchBar({ onSelect, onSearch }: Props) {
           <ScrollArea.Root className="overflow-hidden">
             <ScrollArea.Viewport className="max-h-80 w-full">
               <div className="flex flex-col gap-1">
+                {showSkeleton && <SearchResultsSkeleton />}
+
                 {showResults &&
                   results.map((r) => (
                     <button

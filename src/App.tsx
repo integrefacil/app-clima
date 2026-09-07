@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dialog, Separator, ToggleGroup } from 'radix-ui'
 import { SearchBar } from './components/SearchBar'
@@ -10,10 +10,16 @@ import { fmtTime, fmtWeekdayLong } from './lib/format'
 import { isDayNow } from './lib/celestial'
 import { addToHistory } from './services/history'
 import { useHashView } from './hooks/useHashView'
-import { ForecastDashboard } from './views/ForecastDashboard'
-import { SunDetail } from './views/details/SunDetail'
-import { HeroDetail } from './views/details/HeroDetail'
-import { MarineFull } from './views/MarineFull'
+import { DashboardSkeleton, DetailSkeleton, MarineFullSkeleton, SunDetailSkeleton } from './components/skeletons/DashboardSkeleton'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
+
+// lazy loading — rotas viram chunks separados
+const ForecastDashboard = lazy(() =>
+  import('./views/ForecastDashboard').then((m) => ({ default: m.ForecastDashboard })),
+)
+const SunDetail = lazy(() => import('./views/details/SunDetail').then((m) => ({ default: m.SunDetail })))
+const HeroDetail = lazy(() => import('./views/details/HeroDetail').then((m) => ({ default: m.HeroDetail })))
+const MarineFull = lazy(() => import('./views/MarineFull').then((m) => ({ default: m.MarineFull })))
 
 type LocationState = { name: string; lat: number; lon: number }
 
@@ -40,6 +46,7 @@ export default function App() {
   const [forecast, setForecast] = useState<null | Awaited<ReturnType<typeof fetchForecast>>>(null)
   const [marine, setMarine] = useState<null | Awaited<ReturnType<typeof fetchMarineWithTides>>['marine']>(null)
   const [stormglassTides, setStormglassTides] = useState<null | Awaited<ReturnType<typeof fetchMarineWithTides>>['tides']>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [marineLoading, setMarineLoading] = useState(true)
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const [fromCache, setFromCache] = useState(false)
@@ -50,15 +57,21 @@ export default function App() {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 60_000)
-    const onVis = () => { if (document.visibilityState === 'visible') setNow(new Date()) }
+    const onVis = () => {
+      if (document.visibilityState === 'visible') setNow(new Date())
+    }
     document.addEventListener('visibilitychange', onVis)
-    return () => { window.clearInterval(id); document.removeEventListener('visibilitychange', onVis) }
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+    }
   }, [])
 
   // derivado 100% auto: litoral se marine retornou dados
   const isBeach = useMemo(() => isCoastalByMarine(marine), [marine])
 
   const load = useCallback(async (latitude: number, longitude: number) => {
+    setIsLoading(true)
     setMarineLoading(true)
     try {
       const fc = await fetchForecast(latitude, longitude)
@@ -87,6 +100,7 @@ export default function App() {
     } catch {
       setFromCache(true)
     } finally {
+      setIsLoading(false)
       setMarineLoading(false)
     }
   }, [])
@@ -118,7 +132,7 @@ export default function App() {
 
   const hourly = useMemo(() => {
     if (!forecast) {
-      // mock relativo à hora atual (não sequencial 07h fixo)
+      // mock relativo à hora atual (não sequencial 07h fixo) — usado só após loading quando ainda sem dados
       const base = new Date()
       base.setMinutes(0, 0, 0)
       return Array.from({ length: 24 }, (_, i) => {
@@ -195,7 +209,7 @@ export default function App() {
 
   const plainWind = (speed: number, deg: number) => {
     const s = speed < 5 ? (i18n.language.startsWith('pt') ? 'Calmo' : 'Calm') : speed < 15 ? (i18n.language.startsWith('pt') ? 'Brisa leve' : 'Light breeze') : speed < 25 ? (i18n.language.startsWith('pt') ? 'Vento moderado' : 'Moderate') : (i18n.language.startsWith('pt') ? 'Vento forte' : 'Strong')
-    const dirs = i18n.language.startsWith('pt') ? ['do norte','do nordeste','do leste','do sudeste','do sul','do sudoeste','do oeste','do noroeste'] : ['from north','from northeast','from east','from southeast','from south','from southwest','from west','from northwest']
+    const dirs = i18n.language.startsWith('pt') ? ['do norte', 'do nordeste', 'do leste', 'do sudeste', 'do sul', 'do sudoeste', 'do oeste', 'do noroeste'] : ['from north', 'from northeast', 'from east', 'from southeast', 'from south', 'from southwest', 'from west', 'from northwest']
     const idx = Math.round(((deg % 360) / 45)) % 8
     return { label: s, sub: dirs[idx] }
   }
@@ -255,7 +269,7 @@ export default function App() {
     // 3) fallback legado: daily max (cache antigo sem uv_index horário)
     const uv = forecast.daily.uv_index_max?.[0] ?? 0
     return plainUV(uv)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forecast, t, i18n.language])
 
   // grid vazio — Ar e Vento agora moram no Hero para não poluir dashboard
@@ -319,10 +333,16 @@ export default function App() {
               className="glass flex rounded-full p-1"
               aria-label="Language"
             >
-              <ToggleGroup.Item value="pt" className="px-2 py-1 rounded-full text-xs md:text-sm data-[state=on]:bg-white data-[state=on]:text-sky-900 data-[state=off]:text-white/70">
+              <ToggleGroup.Item
+                value="pt"
+                className="px-2 py-1 rounded-full text-xs md:text-sm data-[state=on]:bg-white data-[state=on]:text-sky-900 data-[state=off]:text-white/70"
+              >
                 PT
               </ToggleGroup.Item>
-              <ToggleGroup.Item value="en" className="px-2 py-1 rounded-full text-xs md:text-sm data-[state=on]:bg-white data-[state=on]:text-sky-900 data-[state=off]:text-white/70">
+              <ToggleGroup.Item
+                value="en"
+                className="px-2 py-1 rounded-full text-xs md:text-sm data-[state=on]:bg-white data-[state=on]:text-sky-900 data-[state=off]:text-white/70"
+              >
                 EN
               </ToggleGroup.Item>
             </ToggleGroup.Root>
@@ -335,36 +355,122 @@ export default function App() {
 
         <div className="space-y-3">
           {view.screen === 'dashboard' && (
-            <ForecastDashboard
-              locName={loc.name}
-              temp={header.temp}
-              code={header.code}
-              max={header.max}
-              min={header.min}
-              sunrise={sunrise}
-              sunset={sunset}
-              sunriseISO={sunriseISO}
-              sunsetISO={sunsetISO}
-              moonrise={moonrise}
-              moonset={moonset}
-              moonriseISO={moonriseISO}
-              moonsetISO={moonsetISO}
-              metrics={metrics}
-              marine={isBeach ? (marine?.current ?? null) : null}
-              week={isBeach ? marineWeek : null}
-              feelsLike={feelsLike}
-              humidity={humidity}
-              windLabel={windLabel}
-              uvLabel={uvLabel}
-              isDay={isDay}
-              hours={hourly}
-              days={daily}
-              onNavigate={handleForecastNavigate}
-            />
+            <ErrorBoundary>
+              {isLoading ? (
+                <DashboardSkeleton />
+              ) : (
+                <Suspense fallback={<DashboardSkeleton />}>
+                  <ForecastDashboard
+                    locName={loc.name}
+                    temp={header.temp}
+                    code={header.code}
+                    max={header.max}
+                    min={header.min}
+                    sunrise={sunrise}
+                    sunset={sunset}
+                    sunriseISO={sunriseISO}
+                    sunsetISO={sunsetISO}
+                    moonrise={moonrise}
+                    moonset={moonset}
+                    moonriseISO={moonriseISO}
+                    moonsetISO={moonsetISO}
+                    metrics={metrics}
+                    marine={isBeach ? (marine?.current ?? null) : null}
+                    week={isBeach ? marineWeek : null}
+                    feelsLike={feelsLike}
+                    humidity={humidity}
+                    windLabel={windLabel}
+                    uvLabel={uvLabel}
+                    isDay={isDay}
+                    hours={hourly}
+                    days={daily}
+                    onNavigate={handleForecastNavigate}
+                  />
+                </Suspense>
+              )}
+            </ErrorBoundary>
           )}
-          {view.screen === 'hero' && <HeroDetail location={loc.name} temp={header.temp} code={header.code} max={header.max} min={header.min} hours={hourly} days={daily} feelsLike={feelsLike} humidity={humidity} windLabel={windLabel} uvLabel={uvLabel} isDay={isDay} onBack={backToDashboard} />}
-          {view.screen === 'sun' && <SunDetail location={loc.name} temp={header.temp} code={header.code} max={header.max} min={header.min} feelsLike={feelsLike} humidity={humidity} windLabel={windLabel} uvLabel={uvLabel} isDay={isDay} sunrise={sunrise} sunset={sunset} sunriseISO={sunriseISO} sunsetISO={sunsetISO} moonrise={moonrise} moonset={moonset} moonriseISO={moonriseISO} moonsetISO={moonsetISO} onBack={backToDashboard} />}
-          {view.screen === 'marine-full' && <MarineFull location={loc.name} temp={header.temp} code={header.code} max={header.max} min={header.min} feelsLike={feelsLike} humidity={humidity} windLabel={windLabel} uvLabel={uvLabel} isDay={isDay} marine={marine?.current ?? null} week={marineWeek} onBack={backToDashboard} />}
+          {view.screen === 'hero' && (
+            <ErrorBoundary>
+              {isLoading ? (
+                <DetailSkeleton />
+              ) : (
+                <Suspense fallback={<DetailSkeleton />}>
+                  <HeroDetail
+                    location={loc.name}
+                    temp={header.temp}
+                    code={header.code}
+                    max={header.max}
+                    min={header.min}
+                    hours={hourly}
+                    days={daily}
+                    feelsLike={feelsLike}
+                    humidity={humidity}
+                    windLabel={windLabel}
+                    uvLabel={uvLabel}
+                    isDay={isDay}
+                    onBack={backToDashboard}
+                  />
+                </Suspense>
+              )}
+            </ErrorBoundary>
+          )}
+          {view.screen === 'sun' && (
+            <ErrorBoundary>
+              {isLoading ? (
+                <SunDetailSkeleton />
+              ) : (
+                <Suspense fallback={<SunDetailSkeleton />}>
+                  <SunDetail
+                    location={loc.name}
+                    temp={header.temp}
+                    code={header.code}
+                    max={header.max}
+                    min={header.min}
+                    feelsLike={feelsLike}
+                    humidity={humidity}
+                    windLabel={windLabel}
+                    uvLabel={uvLabel}
+                    isDay={isDay}
+                    sunrise={sunrise}
+                    sunset={sunset}
+                    sunriseISO={sunriseISO}
+                    sunsetISO={sunsetISO}
+                    moonrise={moonrise}
+                    moonset={moonset}
+                    moonriseISO={moonriseISO}
+                    moonsetISO={moonsetISO}
+                    onBack={backToDashboard}
+                  />
+                </Suspense>
+              )}
+            </ErrorBoundary>
+          )}
+          {view.screen === 'marine-full' && (
+            <ErrorBoundary>
+              {isLoading || marineLoading ? (
+                <MarineFullSkeleton />
+              ) : (
+                <Suspense fallback={<MarineFullSkeleton />}>
+                  <MarineFull
+                    location={loc.name}
+                    temp={header.temp}
+                    code={header.code}
+                    max={header.max}
+                    min={header.min}
+                    feelsLike={feelsLike}
+                    humidity={humidity}
+                    windLabel={windLabel}
+                    uvLabel={uvLabel}
+                    isDay={isDay}
+                    marine={marine?.current ?? null}
+                    week={marineWeek}
+                    onBack={backToDashboard}
+                  />
+                </Suspense>
+              )}
+            </ErrorBoundary>
+          )}
         </div>
 
         <Separator.Root className="h-px bg-white/10 my-2" />
