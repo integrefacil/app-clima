@@ -1,41 +1,37 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Dialog, Separator, Tabs, ToggleGroup } from 'radix-ui'
-import { DailyList } from './components/DailyList'
-import { HeaderHero } from './components/HeaderHero'
-import { HourlyStrip } from './components/HourlyStrip'
-import { MarineModule } from './components/MarineModule'
-import { MarineWeekList } from './components/MarineWeekList'
-import { MetricGrid } from './components/MetricGrid'
+import { Dialog, Separator, ToggleGroup } from 'radix-ui'
 import { SearchBar } from './components/SearchBar'
-import { SunsetArc } from './components/SunsetArc'
 import { fetchForecast, fetchMarineWithTides, searchLocation, type GeocodeResult } from './services/api'
 import { buildMarineWeek, mockMarineWeek } from './services/marineWeek'
-import { fmtTime } from './lib/format'
-import { getStorage, setStorage } from './lib/storage'
+import { coastalCacheKey, isCoastalByMarine } from './services/coastal'
+import { getCached, setCached, TTL } from './services/cache'
+import { fmtTime, fmtWeekdayLong } from './lib/format'
+import { isDayNow } from './lib/celestial'
 import { addToHistory } from './services/history'
+import { useHashView } from './hooks/useHashView'
+import { ForecastDashboard } from './views/ForecastDashboard'
+import { HourlyDetail } from './views/details/HourlyDetail'
+import { DailyDetail } from './views/details/DailyDetail'
+import { SunDetail } from './views/details/SunDetail'
+import { HeroDetail } from './views/details/HeroDetail'
+import { MarineFull } from './views/MarineFull'
 
 type LocationState = { name: string; lat: number; lon: number }
 
-const MOCK_HOURLY = Array.from({ length: 24 }, (_, i) => ({
-  time: `${String((7 + i) % 24).padStart(2, '0')}:00`,
-  temp: 27 + Math.sin(i / 3) * 2,
-  code: i < 4 ? 3 : i < 8 ? 2 : 1,
-  precip: i % 5 === 0 ? 10 : 0,
-}))
-
 const MOCK_DAILY = [
   { label: 'Hoje', code: 2, max: 29, min: 24, precip: 10 },
-  { label: 'seg', code: 3, max: 29, min: 23, precip: 20 },
-  { label: 'ter', code: 1, max: 29, min: 23, precip: 10 },
-  { label: 'qua', code: 2, max: 29, min: 24, precip: 5 },
-  { label: 'qui', code: 3, max: 29, min: 24, precip: 0 },
-  { label: 'sex', code: 1, max: 29, min: 24, precip: 0 },
-  { label: 'sáb', code: 0, max: 29, min: 24, precip: 0 },
+  { label: 'Amanhã', code: 3, max: 29, min: 23, precip: 20 },
+  { label: 'quarta', code: 1, max: 29, min: 23, precip: 10 },
+  { label: 'quinta', code: 2, max: 29, min: 24, precip: 5 },
+  { label: 'sexta', code: 3, max: 29, min: 24, precip: 0 },
+  { label: 'sábado', code: 1, max: 29, min: 24, precip: 0 },
+  { label: 'domingo', code: 0, max: 29, min: 24, precip: 0 },
 ]
 
 export default function App() {
   const { t, i18n } = useTranslation()
+  const { view, navigate, backToDashboard } = useHashView()
   const [loc, setLoc] = useState<LocationState>(() => {
     try {
       const raw = localStorage.getItem('app-clima:last-location')
@@ -46,31 +42,70 @@ export default function App() {
   const [forecast, setForecast] = useState<null | Awaited<ReturnType<typeof fetchForecast>>>(null)
   const [marine, setMarine] = useState<null | Awaited<ReturnType<typeof fetchMarineWithTides>>['marine']>(null)
   const [stormglassTides, setStormglassTides] = useState<null | Awaited<ReturnType<typeof fetchMarineWithTides>>['tides']>(null)
-  const [isBeach, setIsBeach] = useState(true)
+  const [marineLoading, setMarineLoading] = useState(true)
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const [fromCache, setFromCache] = useState(false)
-  const [mainTab, setMainTab] = useState(() => getStorage('app-clima:tab:main', 'forecast'))
 
   const locale = i18n.language
 
+  // tick vivo para virar ícone dia/noite no pôr do sol sem esperar próximo fetch
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 60_000)
+    const onVis = () => { if (document.visibilityState === 'visible') setNow(new Date()) }
+    document.addEventListener('visibilitychange', onVis)
+    return () => { window.clearInterval(id); document.removeEventListener('visibilitychange', onVis) }
+  }, [])
+
+  // derivado 100% auto: litoral se marine retornou dados
+  const isBeach = useMemo(() => isCoastalByMarine(marine), [marine])
+
   const load = useCallback(async (latitude: number, longitude: number) => {
+    setMarineLoading(true)
     try {
       const fc = await fetchForecast(latitude, longitude)
       setForecast(fc)
       setUpdatedAt(new Date())
       setFromCache(false)
-      const { marine: mr, tides } = await fetchMarineWithTides(latitude, longitude)
+      // otimização: se já sabemos que é interior (cache coastal false), pula fetch marine
+      const cKey = coastalCacheKey(latitude, longitude)
+      const cachedCoastal = await getCached<boolean>(cKey, TTL.coastal)
+      let mr: Awaited<ReturnType<typeof fetchMarineWithTides>>['marine'] = null
+      let tides: Awaited<ReturnType<typeof fetchMarineWithTides>>['tides'] = null
+      if (cachedCoastal && !cachedCoastal.stale && cachedCoastal.data === false) {
+        mr = null
+        tides = null
+      } else {
+        const res = await fetchMarineWithTides(latitude, longitude)
+        mr = res.marine
+        tides = res.tides
+        // persiste decisão para próximas cargas (evita fetch marine em interior)
+        try {
+          await setCached(cKey, isCoastalByMarine(mr))
+        } catch {}
+      }
       setMarine(mr)
       setStormglassTides(tides)
-      setIsBeach(!!mr)
     } catch {
       setFromCache(true)
+    } finally {
+      setMarineLoading(false)
     }
   }, [])
 
   useEffect(() => {
     load(loc.lat, loc.lon)
   }, [loc.lat, loc.lon, load])
+
+  // compat: se URL antiga #/mar e agora sem abas, redireciona
+  useEffect(() => {
+    if (!marineLoading && !isBeach && view.tab === 'marine') {
+      navigate({ tab: 'forecast', screen: 'dashboard' })
+    }
+    if (view.tab === 'marine' && view.screen === 'dashboard') {
+      navigate({ tab: 'forecast', screen: 'dashboard' })
+    }
+  }, [isBeach, marineLoading, view, navigate])
 
   const onSelect = (r: GeocodeResult) => {
     const next = { name: r.display_name.split(',').slice(0, 3).join(','), lat: parseFloat(r.lat), lon: parseFloat(r.lon) }
@@ -84,25 +119,62 @@ export default function App() {
   const onSearchCb = useCallback((q: string) => searchLocation(q), [])
 
   const hourly = useMemo(() => {
-    if (!forecast) return MOCK_HOURLY
-    return forecast.hourly.time.slice(0, 24).map((time, i) => ({
-      time: fmtTime(time, locale).replace(':00', ''),
-      temp: forecast.hourly.temperature_2m[i],
-      code: forecast.hourly.weather_code[i],
-      precip: forecast.hourly.precipitation_probability?.[i],
-    }))
-  }, [forecast, locale])
+    if (!forecast) {
+      // mock relativo à hora atual (não sequencial 07h fixo)
+      const base = new Date()
+      base.setMinutes(0, 0, 0)
+      return Array.from({ length: 24 }, (_, i) => {
+        const d = new Date(base.getTime() + i * 3600_000)
+        return {
+          time: new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(d).replace(':00', ''),
+          temp: 27 + Math.sin(i / 3) * 2,
+          code: i < 4 ? 3 : i < 8 ? 2 : 1,
+          precip: i % 5 === 0 ? 10 : 0,
+        }
+      }) as { time: string; temp: number; code: number; precip?: number; isDay?: boolean }[]
+    }
+    // helper para isDay por hora usando sunrise/sunset do dia correspondente
+    const sunriseByDate = new Map<string, string>()
+    const sunsetByDate = new Map<string, string>()
+    forecast.daily.time.forEach((d, idx) => {
+      sunriseByDate.set(d, forecast.daily.sunrise[idx])
+      sunsetByDate.set(d, forecast.daily.sunset[idx])
+    })
+    // encontra índice da hora atual (arredonda para baixo) para exibir próximas 24h reais
+    const nowHour = new Date(now)
+    nowHour.setMinutes(0, 0, 0)
+    nowHour.setSeconds(0, 0)
+    let startIdx = forecast.hourly.time.findIndex((t) => new Date(t).getTime() >= nowHour.getTime())
+    if (startIdx === -1) startIdx = 0
+    // garante 24 entradas mesmo perto do fim do array
+    const endIdx = Math.min(startIdx + 24, forecast.hourly.time.length)
+    // se faltar horas (fim do forecast), ajusta início para trás
+    if (endIdx - startIdx < 24) startIdx = Math.max(0, endIdx - 24)
+    return forecast.hourly.time.slice(startIdx, startIdx + 24).map((time, offset) => {
+      const i = startIdx + offset
+      const dateKey = time.slice(0, 10)
+      const sr = sunriseByDate.get(dateKey) ?? forecast.daily.sunrise[0]
+      const ss = sunsetByDate.get(dateKey) ?? forecast.daily.sunset[0]
+      const isDayHour = isDayNow(new Date(time), sr, ss)
+      return {
+        time: fmtTime(time, locale).replace(':00', ''),
+        temp: forecast.hourly.temperature_2m[i],
+        code: forecast.hourly.weather_code[i],
+        precip: forecast.hourly.precipitation_probability?.[i],
+        isDay: isDayHour,
+      }
+    })
+  }, [forecast, locale, now])
 
   const daily = useMemo(() => {
     if (!forecast) return MOCK_DAILY
     return forecast.daily.time.slice(0, 7).map((time, i) => {
-      const d = new Date(time)
       const label =
         i === 0
           ? t('daily.today')
           : i === 1
             ? t('daily.tomorrow')
-            : new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d)
+            : fmtWeekdayLong(time, locale)
       return {
         label,
         code: forecast.daily.weather_code[i],
@@ -123,7 +195,6 @@ export default function App() {
     }
   }, [forecast])
 
-  // helpers plain — sem jargão
   const plainWind = (speed: number, deg: number) => {
     const s = speed < 5 ? (i18n.language.startsWith('pt') ? 'Calmo' : 'Calm') : speed < 15 ? (i18n.language.startsWith('pt') ? 'Brisa leve' : 'Light breeze') : speed < 25 ? (i18n.language.startsWith('pt') ? 'Vento moderado' : 'Moderate') : (i18n.language.startsWith('pt') ? 'Vento forte' : 'Strong')
     const dirs = i18n.language.startsWith('pt') ? ['do norte','do nordeste','do leste','do sudeste','do sul','do sudoeste','do oeste','do noroeste'] : ['from north','from northeast','from east','from southeast','from south','from southwest','from west','from northwest']
@@ -131,7 +202,7 @@ export default function App() {
     return { label: s, sub: dirs[idx] }
   }
   const plainHumidity = (h: number) => {
-    if (h < 40) return i18n.language.startsWith('pt') ? 'Sequinho' : 'Dry'
+    if (h < 40) return i18n.language.startsWith('pt') ? 'Seco' : 'Dry'
     if (h < 60) return i18n.language.startsWith('pt') ? 'Agradável' : 'Comfortable'
     if (h < 80) return i18n.language.startsWith('pt') ? 'Úmido' : 'Humid'
     return i18n.language.startsWith('pt') ? 'Bem úmido' : 'Very humid'
@@ -142,31 +213,69 @@ export default function App() {
     return t('metrics.uvModerate')
   }
 
-  const metrics = useMemo(() => {
-    if (!forecast)
-      return [
-        { icon: '💧', label: 'metrics.humidity', value: i18n.language.startsWith('pt') ? 'Úmido' : 'Humid', sub: t('metrics.humidityDesc'), detail: i18n.language.startsWith('pt') ? 'Ar com bastante umidade, pode abafar' : 'Muggy air, drink water' },
-        { icon: '💨', label: 'metrics.wind', value: i18n.language.startsWith('pt') ? 'Brisa leve' : 'Light breeze', sub: i18n.language.startsWith('pt') ? 'vindo do nordeste' : 'from northeast', detail: i18n.language.startsWith('pt') ? 'Vento tranquilo para passear' : 'Calm enough to go out' },
-        { icon: '🌡️', label: 'metrics.feelsLike', value: '23°', sub: i18n.language.startsWith('pt') ? 'Quentinho gostoso' : 'Warm and nice', detail: i18n.language.startsWith('pt') ? 'Sensação de calor agradável' : 'Feels warm and nice' },
-        { icon: '🧭', label: 'metrics.pressure', value: i18n.language.startsWith('pt') ? 'Firme' : 'Steady', sub: t('metrics.pressureDesc'), detail: i18n.language.startsWith('pt') ? 'Tempo deve continuar assim' : 'Weather should stay like this' },
-        { icon: '👁️', label: 'metrics.visibility', value: i18n.language.startsWith('pt') ? 'Longe' : 'Far', sub: i18n.language.startsWith('pt') ? 'Dá para ver bem' : 'You can see far', detail: i18n.language.startsWith('pt') ? 'Sem neblina por perto' : 'No fog around' },
-        { icon: '☀️', label: 'metrics.uv', value: t('metrics.uvLow'), sub: i18n.language.startsWith('pt') ? 'Luz tranquila' : 'Soft light', detail: t('metrics.uvLow') },
-      ]
+  // sensação, Ar e Vento diretos no Hero — sem adjetivos poluindo
+  const feelsLike = useMemo(() => {
+    if (!forecast) return { value: '23°' }
     const c = forecast.current
-    const d = forecast.daily
+    return { value: `${Math.round(c.apparent_temperature)}°` }
+  }, [forecast])
+
+  const humidity = useMemo(() => {
+    if (!forecast) return i18n.language.startsWith('pt') ? 'Úmido' : 'Humid'
+    return plainHumidity(forecast.current.relative_humidity_2m)
+  }, [forecast, i18n.language])
+
+  const windLabel = useMemo(() => {
+    if (!forecast) return i18n.language.startsWith('pt') ? 'Brisa leve do nordeste • 12 km/h' : 'Light breeze from northeast • 12 km/h'
+    const c = forecast.current
     const w = plainWind(c.wind_speed_10m, c.wind_direction_10m)
-    return [
-      { icon: '💧', label: 'metrics.humidity', value: plainHumidity(c.relative_humidity_2m), sub: c.relative_humidity_2m > 75 ? t('metrics.humidityDesc') : (i18n.language.startsWith('pt') ? 'Ar agradável' : 'Nice air'), detail: i18n.language.startsWith('pt') ? 'Ar com umidade, pode abafar um pouco' : 'Humid air' },
-      { icon: '💨', label: 'metrics.wind', value: w.label, sub: w.sub, detail: i18n.language.startsWith('pt') ? 'Vento para sentir no rosto' : 'Wind you can feel' },
-      { icon: '🌡️', label: 'metrics.feelsLike', value: `${Math.round(c.apparent_temperature)}°`, sub: c.apparent_temperature > 28 ? (i18n.language.startsWith('pt') ? 'Bem quentinho' : 'Quite warm') : c.apparent_temperature < 18 ? (i18n.language.startsWith('pt') ? 'Fresquinho' : 'Cool') : (i18n.language.startsWith('pt') ? 'Agradável' : 'Pleasant'), detail: i18n.language.startsWith('pt') ? 'Como o corpo sente lá fora' : 'How it feels outside' },
-      { icon: '🧭', label: 'metrics.pressure', value: i18n.language.startsWith('pt') ? 'Firme' : 'Steady', sub: t('metrics.pressureDesc'), detail: i18n.language.startsWith('pt') ? 'Tempo firme' : 'Steady weather' },
-      { icon: '👁️', label: 'metrics.visibility', value: i18n.language.startsWith('pt') ? 'Longe' : 'Far', sub: i18n.language.startsWith('pt') ? 'Dá para ver bem' : 'Clear view', detail: i18n.language.startsWith('pt') ? 'Sem neblina' : 'No fog' },
-      { icon: '☀️', label: 'metrics.uv', value: plainUV(d.uv_index_max?.[0] ?? 0), sub: (d.uv_index_max?.[0] ?? 0) > 5 ? (i18n.language.startsWith('pt') ? 'Sol forte' : 'Strong sun') : (i18n.language.startsWith('pt') ? 'Sol tranquilo' : 'Calm sun'), detail: plainUV(d.uv_index_max?.[0] ?? 0) },
-    ]
+    return `${w.label} ${w.sub} • ${Math.round(c.wind_speed_10m)} km/h`
+  }, [forecast, i18n.language])
+
+  const uvLabel = useMemo(() => {
+    if (!forecast) return plainUV(0)
+    // 1) current.uv_index é o mais preciso (horário real) — 0 à noite
+    const currentUv = forecast.current.uv_index
+    if (typeof currentUv === 'number' && Number.isFinite(currentUv)) return plainUV(currentUv)
+    // 2) fallback horário: acha hora mais próxima de agora em hourly.time
+    const hourlyUv = forecast.hourly.uv_index
+    const hourlyTime = forecast.hourly.time
+    if (hourlyUv && hourlyTime && hourlyUv.length === hourlyTime.length) {
+      const nowMs = Date.now()
+      let bestIdx = 0
+      let bestDiff = Infinity
+      for (let i = 0; i < hourlyTime.length; i++) {
+        const diff = Math.abs(new Date(hourlyTime[i]).getTime() - nowMs)
+        if (diff < bestDiff) {
+          bestDiff = diff
+          bestIdx = i
+        }
+      }
+      const v = hourlyUv[bestIdx]
+      if (typeof v === 'number' && Number.isFinite(v)) return plainUV(v)
+    }
+    // 3) fallback legado: daily max (cache antigo sem uv_index horário)
+    const uv = forecast.daily.uv_index_max?.[0] ?? 0
+    return plainUV(uv)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forecast, t, i18n.language])
+
+  // grid vazio — Ar e Vento agora moram no Hero para não poluir dashboard
+  const metrics = useMemo(() => [] as { icon: string; label: string; value: string; sub?: string; detail?: string }[], [])
 
   const sunrise = forecast ? fmtTime(forecast.daily.sunrise[0], locale) : '05:18'
   const sunset = forecast ? fmtTime(forecast.daily.sunset[0], locale) : '17:17'
+  const sunriseISO = forecast?.daily.sunrise[0] ?? null
+  const sunsetISO = forecast?.daily.sunset[0] ?? null
+  // isDay vivo: celestial com now tick (não depende de cache is_day stale)
+  const isDay = useMemo(() => {
+    if (!forecast) return null
+    return isDayNow(now, sunriseISO, sunsetISO)
+  }, [forecast, sunriseISO, sunsetISO, now])
+  const moonriseISO = forecast?.daily.moonrise?.[0] ?? null
+  const moonsetISO = forecast?.daily.moonset?.[0] ?? null
+  const moonrise = moonriseISO ? fmtTime(moonriseISO, locale) : null
+  const moonset = moonsetISO ? fmtTime(moonsetISO, locale) : null
 
   const marineWeek = useMemo(() => {
     if (!marine || !forecast) return mockMarineWeek()
@@ -181,7 +290,6 @@ export default function App() {
         stormglassTides: stormglassTides ?? undefined,
         locale,
       })
-      // ordena por data cronológica para exibição
       week.days.sort((a, b) => a.date.localeCompare(b.date))
       return week
     } catch {
@@ -189,39 +297,23 @@ export default function App() {
     }
   }, [marine, forecast, stormglassTides, locale])
 
+  const handleForecastNavigate = (screen: 'sun' | 'hero' | 'marine-full' | 'hourly' | 'daily') => {
+    if (screen === 'marine-full') {
+      if (!isBeach) return
+      navigate({ tab: 'forecast', screen: 'marine-full' })
+    } else {
+      navigate({ tab: 'forecast', screen: screen as never })
+    }
+  }
+
   return (
     <div className="min-h-screen">
-      {/* Responsivo: 420px mobile → 768 tablet → 1280 desktop */}
       <div className="w-full max-w-[420px] md:max-w-3xl lg:max-w-6xl xl:max-w-[1280px] mx-auto px-3 md:px-6 lg:px-8 pt-4 pb-10 space-y-3 md:space-y-4">
-        {/* Top bar */}
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <span className="text-xs text-white/60 truncate order-2 md:order-1">
             {updatedAt ? t('cache.updatedAt', { time: updatedAt.toLocaleTimeString(locale) }) : ''} {fromCache ? `• ${t('cache.stale')}` : ''}
           </span>
           <div className="flex items-center gap-2 shrink-0 order-1 md:order-2 self-end md:self-auto">
-            <ToggleGroup.Root
-              type="single"
-              value={isBeach ? 'beach' : 'countryside'}
-              onValueChange={(v) => v && setIsBeach(v === 'beach')}
-              className="glass flex rounded-full p-1 gap-1"
-              aria-label={t('geo.beach')}
-            >
-              <ToggleGroup.Item
-                value="beach"
-                aria-label={t('geo.beach')}
-                className="px-2.5 py-1 rounded-full text-xs md:text-sm data-[state=on]:bg-white data-[state=on]:text-sky-900 data-[state=off]:text-white/70 transition-colors"
-              >
-                🏖 {t('geo.beach')}
-              </ToggleGroup.Item>
-              <ToggleGroup.Item
-                value="countryside"
-                aria-label={t('geo.countryside')}
-                className="px-2.5 py-1 rounded-full text-xs md:text-sm data-[state=on]:bg-white data-[state=on]:text-sky-900 data-[state=off]:text-white/70 transition-colors"
-              >
-                🌾 {t('geo.countryside')}
-              </ToggleGroup.Item>
-            </ToggleGroup.Root>
-
             <ToggleGroup.Root
               type="single"
               value={i18n.language.startsWith('pt') ? 'pt' : 'en'}
@@ -243,114 +335,41 @@ export default function App() {
           <SearchBar onSelect={onSelect} onSearch={onSearchCb} />
         </div>
 
-        {/* Tabs — posição salva em localStorage */}
-        <Tabs.Root value={mainTab} onValueChange={(v) => { setMainTab(v); setStorage('app-clima:tab:main', v) }} className="space-y-3">
-          <Tabs.List className="glass flex rounded-full p-1 gap-1 max-w-[420px] md:max-w-[360px]">
-            <Tabs.Trigger value="forecast" className="flex-1 py-1.5 rounded-full text-xs md:text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-sky-900 text-white/70 data-[state=active]:shadow">
-              {t('app.title')}
-            </Tabs.Trigger>
-            <Tabs.Trigger value="marine" className="flex-1 py-1.5 rounded-full text-xs md:text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-sky-900 text-white/70">
-              🌊 {t('marine.title')}
-            </Tabs.Trigger>
-          </Tabs.List>
-
-          <Tabs.Content value="forecast" className="focus:outline-none">
-            {/* Grid responsivo: mobile 1 col, lg 12 cols */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4">
-              {/* Coluna principal */}
-              <div className="lg:col-span-8 space-y-3 md:space-y-4">
-                <div className="glass-strong overflow-hidden">
-                  <HeaderHero location={loc.name} temp={header.temp} conditionCode={header.code} max={header.max} min={header.min} />
-                </div>
-                <HourlyStrip hours={hourly} />
-                {/* Em desktop, Sunset e Daily lado a lado? Mantém stack mas Daily maior */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
-                  <SunsetArc sunrise={sunrise} sunset={sunset} />
-                  <div className="glass p-4 flex items-center gap-3 md:hidden lg:flex xl:hidden">
-                    <div className="w-10 h-10 rounded-full bg-white/20 grid place-items-center shrink-0" aria-hidden>
-                      🏃
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {t('sport.title')} — {t('sport.status')}
-                      </p>
-                      <p className="text-xs text-white/60">{t('sport.desc')}</p>
-                    </div>
-                  </div>
-                </div>
-                <DailyList days={daily} />
-              </div>
-
-              {/* Sidebar direita — em mobile fica abaixo, em lg ao lado */}
-              <div className="lg:col-span-4 space-y-3 md:space-y-4">
-                <div className="hidden md:flex lg:hidden xl:flex glass p-4 items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 grid place-items-center shrink-0" aria-hidden>
-                    🏃
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {t('sport.title')} — {t('sport.status')}
-                    </p>
-                    <p className="text-xs text-white/60">{t('sport.desc')}</p>
-                  </div>
-                </div>
-                {/* Esconde duplicado em lg */}
-                <div className="hidden lg:block xl:hidden glass p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 grid place-items-center shrink-0" aria-hidden>
-                    🏃
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {t('sport.title')} — {t('sport.status')}
-                    </p>
-                    <p className="text-xs text-white/60">{t('sport.desc')}</p>
-                  </div>
-                </div>
-
-                <MetricGrid items={metrics} />
-
-                <div className="glass p-3 flex justify-between text-xs md:text-sm text-white/60">
-                  <span>🌙 01:12 • 13:07</span>
-                  <span>
-                    {sunrise} • {sunset}
-                  </span>
-                </div>
-
-                {/* Marine preview também na sidebar em desktop para não precisar trocar aba */}
-                <div className="hidden lg:block">
-                  <MarineModule
-                    waveHeight={marine?.current.wave_height ?? null}
-                    wavePeriod={marine?.current.wave_period ?? null}
-                    waveDirection={marine?.current.wave_direction ?? null}
-                    isBeach={isBeach}
-                  />
-                </div>
-              </div>
-            </div>
-          </Tabs.Content>
-
-          <Tabs.Content value="marine" className="focus:outline-none space-y-4">
-            {/* Resumo atual */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-              <div className="lg:col-span-5">
-                <MarineModule
-                  waveHeight={marine?.current.wave_height ?? null}
-                  wavePeriod={marine?.current.wave_period ?? null}
-                  waveDirection={marine?.current.wave_direction ?? null}
-                  isBeach={isBeach}
-                />
-              </div>
-              <div className="lg:col-span-7 glass p-4 text-xs md:text-sm text-white/60 space-y-2">
-                <p className="font-medium text-white/80">{isBeach ? (i18n.language.startsWith('pt') ? 'Como está o mar agora' : 'How the sea is now') : t('marine.noData')}</p>
-                <Separator.Root className="h-px bg-white/10" />
-                <p>{isBeach ? (marine?.current.wave_height != null ? (marine.current.wave_height < 0.5 ? t('marine.waveSmall') : marine.current.wave_height < 1.1 ? t('marine.waveMedium') : t('marine.waveBig')) : '--') : t('marine.noData')}</p>
-                <p className="text-[11px] text-white/40">{t('marine.disclaimer')}</p>
-              </div>
-            </div>
-            {/* 7 dias com médias + marés */}
-            <MarineWeekList days={marineWeek.days} source={marineWeek.source} isBeach={isBeach} />
-          </Tabs.Content>
-        </Tabs.Root>
+        <div className="space-y-3">
+          {view.screen === 'dashboard' && (
+            <ForecastDashboard
+              locName={loc.name}
+              temp={header.temp}
+              code={header.code}
+              max={header.max}
+              min={header.min}
+              sunrise={sunrise}
+              sunset={sunset}
+              sunriseISO={sunriseISO}
+              sunsetISO={sunsetISO}
+              moonrise={moonrise}
+              moonset={moonset}
+              moonriseISO={moonriseISO}
+              moonsetISO={moonsetISO}
+              metrics={metrics}
+              marine={isBeach ? (marine?.current ?? null) : null}
+              week={isBeach ? marineWeek : null}
+              feelsLike={feelsLike}
+              humidity={humidity}
+              windLabel={windLabel}
+              uvLabel={uvLabel}
+              isDay={isDay}
+              hours={hourly}
+              days={daily}
+              onNavigate={handleForecastNavigate}
+            />
+          )}
+          {view.screen === 'hero' && <HeroDetail location={loc.name} temp={header.temp} code={header.code} max={header.max} min={header.min} hours={hourly} days={daily} feelsLike={feelsLike} humidity={humidity} windLabel={windLabel} uvLabel={uvLabel} isDay={isDay} onBack={backToDashboard} />}
+          {view.screen === 'hourly' && <HourlyDetail hours={hourly} onBack={backToDashboard} />}
+          {view.screen === 'daily' && <DailyDetail days={daily} onBack={backToDashboard} />}
+          {view.screen === 'sun' && <SunDetail sunrise={sunrise} sunset={sunset} sunriseISO={sunriseISO} sunsetISO={sunsetISO} moonrise={moonrise} moonset={moonset} moonriseISO={moonriseISO} moonsetISO={moonsetISO} onBack={backToDashboard} />}
+          {view.screen === 'marine-full' && <MarineFull marine={marine?.current ?? null} week={marineWeek} onBack={backToDashboard} />}
+        </div>
 
         <Separator.Root className="h-px bg-white/10 my-2" />
 

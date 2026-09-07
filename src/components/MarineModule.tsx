@@ -4,10 +4,9 @@ type Props = {
   waveHeight: number | null
   wavePeriod: number | null
   waveDirection: number | null
-  isBeach: boolean
 }
 
-export function MarineModule({ waveHeight, wavePeriod, waveDirection, isBeach }: Props) {
+export function MarineModule({ waveHeight, wavePeriod, waveDirection, compact }: Props & { compact?: boolean }) {
   const { t, i18n } = useTranslation()
   const plainWave = (h: number | null) => {
     if (h == null) return '--'
@@ -26,17 +25,9 @@ export function MarineModule({ waveHeight, wavePeriod, waveDirection, isBeach }:
     const dirs = i18n.language.startsWith('pt') ? ['do norte','do nordeste','do leste','do sudeste','do sul','do sudoeste','do oeste','do noroeste'] : ['from north','from northeast','from east','from southeast','from south','from southwest','from west','from northwest']
     return dirs[Math.round(((deg % 360) / 45)) % 8]
   }
-  if (!isBeach) {
-    return (
-      <div className="glass p-4">
-        <p className="text-xs uppercase tracking-widest text-white/60">{t('marine.title')}</p>
-        <p className="text-sm text-white/60 mt-2">{t('marine.noData')}</p>
-      </div>
-    )
-  }
   return (
-    <div className="glass p-4">
-      <p className="text-xs uppercase tracking-widest text-white/60 mb-3">🌊 {t('marine.title')}</p>
+    <div className={compact ? 'p-1' : 'glass p-4'}>
+      {!compact && <p className="text-xs uppercase tracking-widest text-white/60 mb-3">{t('marine.title')}</p>}
       <div className="grid grid-cols-3 gap-3 text-center">
         <div>
           <p className="text-xs text-white/60">{t('marine.waveHeight')}</p>

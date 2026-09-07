@@ -29,13 +29,15 @@
 - [x] 24h `fmtTime` via Intl locale, `precipitation_probability`
 - [x] 10 dias `temperature_2m_max/min` + `precipitation_sum` + barra
 
-## Etapa 5 — Métricas
-- [x] Umidade, vento, sensação, pressão, visibilidade, UV traduzidos
+## Etapa 5 — Métricas (inline abaixo do Hero, sem view)
+- [x] `ForecastDashboard` renderiza `MetricGrid` 6 itens diretamente abaixo do Hero (`glass p-3`), sem `SummaryCard` clicável nem rota `#/clima/metricas`
+- [x] `MetricGrid` sem `compact` (6 cards), Dialog por item mantém `detail`; `MetricsDetail.tsx` removido, `useHashView` sem `metrics` screen, `App.tsx` sem `MetricsDetail` import/rota
 - [x] Toggle EN/PT-BR persiste localStorage
 
-## Etapa 6 — Marine (básico)
-- [x] Fetch marine 60min, `isBeach` auto + toggle manual
-- [x] Campo oculta ondas/marés, praia mostra altura/período/direção
+## Etapa 6 — Marine (auto, sem toggle)
+- [x] Fetch marine 60min, `isBeach` derivado 100% auto `isCoastalByMarine(marine)` + cache `coastal:lat,lon` 7d
+- [x] Toggle Praia/Campo removido; aba Mar escondida (não desabilitada) se interior; card mar em ForecastDashboard oculto se `marine==null`
+- [x] Redirect auto `#/mar` → `#/clima` se interior; `handleForecastNavigate('marine-full')` bloqueado se interior
 
 ## Etapa 8 — Marine 7 dias + marés + média (novo)
 - [x] `fetchMarine` com `hourly wave_height,sea_level + daily wave_height_max + forecast_days=7` (cache 60min) + `fetchStormglassTides` opcional via `VITE_STORMGLASS_KEY`
@@ -43,7 +45,7 @@
 - [x] `MarineWeekList` lista 7 dias `grid 1→2 cols`, cada card mostra `waveAvg`/`waveMax`, `tideHigh`/`tideLow` com altura m + hora (Intl), badge Melhor/Bom/Moderado, Accordion com todos horários + hourly onda
 - [x] `Tabs marine` agora mostra resumo atual + `MarineWeekList`; fallback `mockMarineWeek` se offline; banner “estimado” quando sem Stormglass
 - [x] i18n `marine.weekTitle`, `bestDay`, `bestTime`, etc. em `en`/`pt-BR`
-- [ ] Ver manual: buscar `Suape, PE` → aba Marine mostra 7 cards com alturas e horários; melhor dia com maior score em destaque; expandir dia mostra 3-4 marés
+ - [ ] Ver manual: buscar `Suape, PE` (litoral) → aba Mar visível + 7 cards com alturas e horários; buscar `Brasília, DF` (interior) → aba Mar escondida, sem fetch marine repetido (ver `coastal:*` em IndexedDB), sem card mar no dashboard
 
 ## Etapa 7 — PWA
 - [x] `vite-plugin-pwa` autoUpdate, runtimeCaching NetworkFirst APIs

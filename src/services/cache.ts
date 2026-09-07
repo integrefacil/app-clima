@@ -6,9 +6,10 @@ const TTL = {
   geocode: 1000 * 60 * 60 * 24 * 7, // 7 dias
   forecast: 1000 * 60 * 30, // 30 min
   marine: 1000 * 60 * 60, // 1h
+  coastal: 1000 * 60 * 60 * 24 * 7, // 7 dias — decisão litoral/interior
 } as const
 
-export type CacheKey = `geocode:${string}` | `forecast:${string}` | `marine:${string}`
+export type CacheKey = `geocode:${string}` | `forecast:${string}` | `marine:${string}` | `coastal:${string}`
 
 export async function getCached<T>(key: CacheKey, ttl: number): Promise<{ data: T; stale: boolean } | null> {
   const entry = (await get(key)) as Cached<T> | undefined

@@ -1,24 +1,24 @@
 # Functional Spec — app-clima
 
-> Atualizado em: 2026-09-06 — Marine 7 dias. Atualizar sempre que mudar.
+> Atualizado em: 2026-09-06 — Auto litoral/interior (sem toggle). Atualizar sempre que mudar.
 
 ## Visão
-SPA/PWA React para planejamento de viagens praia & campo. Zero auth. Adaptativa: oculta ondas/marés se interior. Idiomas `en` (default) + `pt-BR`, detecção via OS (`navigator.language`).
+SPA/PWA React para planejamento de viagens. Zero auth. Adaptativa 100% auto: oculta aba Mar + cards de ondas/marés se interior (sem toggle Praia/Campo). Idiomas `en` (default) + `pt-BR`, detecção via OS (`navigator.language`).
 
 ## User Flow
 1. Abre app → barra busca "Para onde você vai hoje? / Where to today?"
-2. Digita "Suape, PE" ou "Gravatá, PE" → Nominatim resolve lat/lon (cache 7d)
-3. Paralelo: Forecast (30min cache) + Marine se litoral (60min)
-4. Dashboard monta condicional praia/campo. Stale-while-revalidate, offline mostra cache.
+2. Digita "Suape, PE" ou "Brasília, DF" → Nominatim resolve lat/lon (cache 7d)
+3. Sempre: Forecast (30min cache). Condicional: Marine só se litoral (`marine.current.wave_height != null`, 60min + coastal 7d)
+4. Dashboard: litoral mostra Clima + aba Mar; interior esconde aba Mar e cards de mar, mostra só clima. Stale-while-revalidate, offline mostra cache.
 
 ## Blocos UI (imagem iOS) — 100% linguagem simples, sem jargão
 - Header hero: local, temp grande, céu simples (ex: Céu limpo / Algumas nuvens), texto “Tarde quente / Noite fresca” (sem Máx/Mín técnico)
-- Faixa horária: próximos horas com temp + ícone, sem % técnico (mostra “Chuvinha” só se >30%)
+- Métricas plain abaixo do Hero (sem card clicável nem view): Ar (Seco/Agradável/Úmido), Vento (Calmo/Brisa leve + vindo do nordeste), Sensação (Agradável), Tempo (Firme/Mudando), Visão (Longe), Sol (Baixo/Precisa protetor) — sem mb/km/UV/m/s, grid 2→3 colunas inline
+- Faixa horária: próximos horas com temp + ícone, sem % técnico (mostra “Chuva fraca” só se >30%)
 - Card arco pôr-do-sol “O sol se põe às 17:17”
-- Próximos dias lista com barras temperatura, chuva vira “Sem chuva / Chuvinha / Pode chover” (sem %)
-- Card Caminhada “Dia bom — Tempo gostoso para sair”
-- Grid métricas plain: Ar (Seco/Agradável/Úmido), Vento (Calmo/Brisa leve + vindo do nordeste), Sensação (Agradável/Quentinho), Tempo (Firme/Mudando), Visão (Longe), Sol (Tranquilo/Precisa protetor) — sem mb/km/UV/m/s
-- Marine 3 abas plain (só praia): Resumo (Ótimo/Bom para banho com melhor dia/hora em frase), Ondas (Ondinhas/Médias/Grandes sem metros), Maré (Maré cheia/seca com hora, sem metros) — lista estilo Próximos dias, sem Cache/Open-Meteo/DHN
+- Próximos dias lista com barras temperatura, chuva vira “Sem chuva / Chuva fraca / Pode chover” (sem %)
+- Card Caminhada “Dia bom — Condições agradáveis para sair”
+- Marine 3 abas plain (só praia): Resumo (Ótimo/Bom para banho com melhor dia/hora em frase), Ondas (Pequenas/Médias/Grandes sem metros), Maré (Maré cheia/seca com hora, sem metros) — lista estilo Próximos dias, sem Cache/Open-Meteo/DHN
 - Removidos: Radar/mapa e Pólen; removido todo “Preamar, Altura da onda, Período, Direção °, Pressão mb, Visibilidade km, Índice UV”
 
 ## i18n
@@ -28,10 +28,11 @@ SPA/PWA React para planejamento de viagens praia & campo. Zero auth. Adaptativa:
 
 ## UI primitives (Radix)
 - Busca: `Popover` ancorado no input, `ScrollArea` resultados
-- Filtros: `ToggleGroup single` para praia/campo e idioma (a11y, `data-[state=on]`)
-- Navegação: `Tabs` externo Clima/Mar + `Tabs` interno Marine (Resumo/Ondas/Maré) plain
-- Detalhes: `Dialog` métricas e report com frases plain, `Separator` divisores, `Accordion` por dia
-- Marine 7 dias: `MarineWeekList` lista vertical estilo Próximos dias com 3 abas, sem números técnicos; `MarineModule` plain (Ondinhas/Tranquilas/vindo do sul)
+- Filtros: `ToggleGroup single` só idioma (praia/campo removido, 100% auto)
+- Navegação: `Tabs` externo Clima/Mar (Mar oculto se interior) + `Tabs` interno Marine (Resumo/Ondas/Maré) plain
+- Detalhes: `Dialog` por métrica (no grid) e report com frases plain, `Separator` divisores, `Accordion` por dia — sem view dedicada `#/clima/metricas`
+- Marine 7 dias: `MarineWeekList` só monta se litoral; `MarineModule` plain (Ondas pequenas/Tranquilas/vindo do sul)
+- Lógica litoral: `src/services/coastal.ts:isCoastalByMarine` (`marine != null`), cache `coastal:lat,lon` 7d para pular fetch marine no interior + redirect auto `#/mar` → `#/clima` se interior
 
 ## Regras
 - Sempre atualizar este doc + technical/api/executable quando mudar comportamento.

@@ -16,7 +16,7 @@
     "overcast": "Cloudy",
     "clear": "Clear",
     "partlyCloudy": "Sun and clouds",
-    "description": "Cloudy morning and sunny afternoon. Warm day, nice evening.",
+    "description": "Cloudy morning and hot sunny afternoon {{max}}° and pleasant night {{min}}°.",
     "high": "Day",
     "low": "Night"
   },
@@ -32,13 +32,44 @@
   },
   "sunset": {
     "sunsetAt": "Sun sets at {{time}}",
-    "sunrise": "Sunrise",
-    "sunset": "Sunset"
+    "sunrise": "Rise",
+    "sunset": "Set"
+  },
+  "celestial": {
+    "sun": "Sun",
+    "moon": "Moon",
+    "sunTitle": "Sun",
+    "sunArcLabel": "Sun arc",
+    "sunHint": "Sun position on the arc right now. At night it sits below the line.",
+    "sunBelow": "Sun below the horizon — already set",
+    "moonArcLabel": "Moon arc"
+  },
+  "moon": {
+    "rise": "Rise",
+    "set": "Set",
+    "phase": "Phase",
+    "illumination": "Illuminated",
+    "illuminated": "illuminated",
+    "age": "{{days}} days",
+    "hint": "Moon walks the arc when rise/set times are available. Phase calculated locally.",
+    "noTimesHint": "Moon times unavailable — showing today's phase at center",
+    "new": "New moon",
+    "waxingCrescent": "Waxing crescent",
+    "firstQuarter": "First quarter",
+    "waxingGibbous": "Waxing gibbous",
+    "full": "Full moon",
+    "waningGibbous": "Waning gibbous",
+    "lastQuarter": "Last quarter",
+    "waningCrescent": "Waning crescent"
   },
   "sport": {
     "title": "Walk",
     "status": "Nice day",
-    "desc": "Nice weather to go out"
+    "desc": "Nice weather to go out",
+    "heroLine": "Good day for a walk, Good afternoon for a walk, Good night for a walk",
+    "heroLineDay": "Good day for a walk",
+    "heroLineAfternoon": "Good afternoon for a walk",
+    "heroLineNight": "Good evening for a walk"
   },
   "metrics": {
     "humidity": "Air",
@@ -94,7 +125,12 @@
     "tideHighPlain": "High tide — water higher",
     "tideLowPlain": "Low tide — more sand",
     "bestTimePlain": "Best to go",
-    "noDataPlain": "No sea here"
+    "noDataPlain": "No sea here",
+    "tideRising": "Rising",
+    "tideFalling": "Falling",
+    "tideRisingAt": "Rising • high at {{time}}",
+    "tideFallingAt": "Falling • low at {{time}}",
+    "tideNow": "Tide"
   },
   "cache": {
     "stale": "Offline, showing last we saw",
@@ -127,6 +163,27 @@
     "82": "Heavy showers",
     "95": "Stormy",
     "96": "Storm with heavy rain"
+  },
+  "views": {
+    "detail": {
+      "back": "Back",
+      "hourlyHint": "Swipe to see 24 hours",
+      "metricsTitle": "Metrics",
+      "metricsHint": "Tap a card to see details",
+      "dayLength": "Day length",
+      "sunHint": "Arc shows current sun/moon position"
+    },
+    "dashboard": {
+      "heroAria": "See current weather details",
+      "hourlyAria": "See all next hours",
+      "dailyAria": "See all next days",
+      "sunAria": "See sun details",
+      "metricsTitle": "Metrics",
+      "metricsAria": "See all metrics",
+      "marineAria": "See full sea",
+      "marineWeekAria": "See full sea week",
+      "tapToExpand": "Tap to see 7 days"
+    }
   },
   "footer": {
     "report": "Something seems off?",

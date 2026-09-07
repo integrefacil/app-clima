@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Tabs } from 'radix-ui'
-import { fmtTime } from '../lib/format'
+import { fmtTime, fmtWeekdayLong } from '../lib/format'
 import { getStorage, setStorage } from '../lib/storage'
 import type { MarineWeekDay } from '../services/marineWeek'
 
 type Props = {
   days: MarineWeekDay[]
   source: string
-  isBeach: boolean
 }
 
 function plainWaveLabel(avg: number | null, t: (k: string) => string) {
@@ -25,19 +24,16 @@ function summaryForScore(score: number, t: (k: string) => string) {
   return t('marine.summaryPoor')
 }
 
-export function MarineWeekList({ days, isBeach }: Props) {
+function dayLabel(idx: number, dateStr: string, locale: string, t: (k: string) => string) {
+  if (idx === 0) return t('daily.today')
+  if (idx === 1) return t('daily.tomorrow')
+  return fmtWeekdayLong(dateStr, locale)
+}
+
+export function MarineWeekList({ days }: Props) {
   const { t, i18n } = useTranslation()
   const locale = i18n.language
   const [marineTab, setMarineTab] = useState(() => getStorage('app-clima:tab:marine', 'resumo'))
-
-  if (!isBeach) {
-    return (
-      <div className="glass p-4">
-        <p className="text-xs uppercase tracking-widest text-white/60">{t('marine.title')}</p>
-        <p className="text-sm text-white/60 mt-2">{t('marine.noData')}</p>
-      </div>
-    )
-  }
 
   if (!days.length) {
     return (
@@ -54,7 +50,7 @@ export function MarineWeekList({ days, isBeach }: Props) {
     <div className="glass p-3 md:p-4">
       <Tabs.Root value={marineTab} onValueChange={(v) => { setMarineTab(v); setStorage('app-clima:tab:marine', v) }} className="space-y-3">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <p className="text-xs md:text-sm text-white/60 uppercase tracking-widest flex items-center gap-1">🌊 {t('marine.weekTitle')}</p>
+          <p className="text-xs md:text-sm text-white/60 uppercase tracking-widest">{t('marine.weekTitle')}</p>
           <Tabs.List className="glass flex rounded-full p-1 gap-1 self-start md:self-auto">
             <Tabs.Trigger value="resumo" className="px-3 py-1 rounded-full text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-sky-900 text-white/70">{t('marine.tabSummary')}</Tabs.Trigger>
             <Tabs.Trigger value="ondas" className="px-3 py-1 rounded-full text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-sky-900 text-white/70">{t('marine.tabWaves')}</Tabs.Trigger>
@@ -68,7 +64,7 @@ export function MarineWeekList({ days, isBeach }: Props) {
             <div className="glass p-3 md:p-4 bg-white/15 text-center rounded-xl mb-3">
               <p className="text-xs uppercase tracking-widest text-white/60">{t('marine.bestDay')}</p>
               <p className="text-base md:text-lg font-semibold mt-1 capitalize">
-                {new Intl.DateTimeFormat(locale, { weekday: 'long', day: '2-digit', month: 'short' }).format(new Date(bestDay.date))} — {summaryForScore(bestDay.score, t as never)}
+                {new Intl.DateTimeFormat(locale, { weekday: 'long', day: '2-digit', month: 'short' }).format(new Date(`${bestDay.date}T12:00:00`))} — {summaryForScore(bestDay.score, t as never)}
               </p>
               <p className="text-sm text-white/70 mt-1">
                 {bestDay.bestSlot ? `${t('marine.bestTimePlain')}: ${bestDay.bestSlot}` : ''} • {plainWaveLabel(bestDay.waveAvg, t as never)}
@@ -79,7 +75,7 @@ export function MarineWeekList({ days, isBeach }: Props) {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="text-[11px] text-white/40">
-                  <th className="text-left font-normal px-2 md:px-3 py-2 w-16 md:w-20">Dia</th>
+                  <th className="text-left font-normal px-2 md:px-3 py-2 w-28 md:w-36">Dia</th>
                   <th className="text-center font-normal px-2 py-2">Como está</th>
                   <th className="text-center font-normal px-2 md:px-3 py-2 w-24 md:w-32 hidden md:table-cell">{t('marine.bestTimePlain')}</th>
                   <th className="text-center font-normal px-2 md:px-3 py-2 w-20">Avaliação</th>
@@ -88,10 +84,7 @@ export function MarineWeekList({ days, isBeach }: Props) {
               <tbody className="divide-y divide-white/10">
                 {days.map((d, idx) => {
                   const isBest = d.date === bestDay?.date
-                  let label: string
-                  if (idx === 0) label = t('daily.today')
-                  else if (idx === 1) label = t('daily.tomorrow')
-                  else label = new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(d.date))
+                  const label = dayLabel(idx, d.date, locale, t as never)
                   return (
                     <tr key={d.date} className={isBest ? 'bg-white/10' : ''}>
                       <td className={`px-2 md:px-3 py-3 ${isBest ? 'font-semibold text-white' : 'text-white/90'}`}>{label}</td>
@@ -116,17 +109,14 @@ export function MarineWeekList({ days, isBeach }: Props) {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="text-[11px] text-white/40">
-                  <th className="text-left font-normal px-2 md:px-3 py-2 w-16 md:w-20">Dia</th>
+                  <th className="text-left font-normal px-2 md:px-3 py-2 w-28 md:w-36">Dia</th>
                   <th className="text-center font-normal px-2 py-2">Ondas</th>
                   <th className="text-center font-normal px-2 md:px-3 py-2 w-28 md:w-36">{t('marine.bestTimePlain')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
                 {days.map((d, idx) => {
-                  let label: string
-                  if (idx === 0) label = t('daily.today')
-                  else if (idx === 1) label = t('daily.tomorrow')
-                  else label = new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(d.date))
+                  const label = dayLabel(idx, d.date, locale, t as never)
                   const isBest = d.date === bestDay?.date
                   return (
                     <tr key={d.date} className={isBest ? 'bg-white/10' : ''}>
@@ -160,10 +150,7 @@ export function MarineWeekList({ days, isBeach }: Props) {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {days.map((d, idx) => {
-                  let label: string
-                  if (idx === 0) label = t('daily.today')
-                  else if (idx === 1) label = t('daily.tomorrow')
-                  else label = new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(d.date))
+                  const label = dayLabel(idx, d.date, locale, t as never)
                   const isBest = d.date === bestDay?.date
                   const tides = d.tides.slice(0, 4)
                   const cell = (i: number) => {
@@ -196,10 +183,7 @@ export function MarineWeekList({ days, isBeach }: Props) {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {days.map((d, idx) => {
-                  let label: string
-                  if (idx === 0) label = t('daily.today')
-                  else if (idx === 1) label = t('daily.tomorrow')
-                  else label = new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(d.date))
+                  const label = dayLabel(idx, d.date, locale, t as never)
                   const tides = d.tides.slice(0, 4)
                   const cell = (i: number) => {
                     const td = tides[i]

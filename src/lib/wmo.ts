@@ -6,11 +6,12 @@ export function wmoKey(code: number): string {
   return String(code)
 }
 
-export function wmoIcon(code: number): string {
+export function wmoIcon(code: number, isDay = true): string {
   // emoji simples para MVP — depois trocar por SVG
-  if (code === 0) return '☀️'
-  if (code === 1) return '🌤️'
-  if (code === 2) return '⛅'
+  // noite: céu limpo / poucas nuvens viram lua (parcial tem lua)
+  if (code === 0) return isDay ? '☀️' : '🌙'
+  if (code === 1) return isDay ? '🌤️' : '🌙'
+  if (code === 2) return isDay ? '⛅' : '🌙☁️'
   if (code === 3) return '☁️'
   if ([45, 48].includes(code)) return '🌫️'
   if ([51, 53, 55, 61, 63, 65].includes(code)) return '🌧️'

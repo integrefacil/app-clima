@@ -16,7 +16,7 @@
     "overcast": "Céu fechado",
     "clear": "Céu limpo",
     "partlyCloudy": "Sol com algumas nuvens",
-    "description": "Manhã com mais nuvens e tarde com sol. Tarde quente e noite agradável.",
+    "description": "Manhã com mais nuvens e tarde quente com sol {{max}}º e noite agradável com {{min}}º.",
     "high": "Tarde",
     "low": "Noite"
   },
@@ -32,17 +32,48 @@
   },
   "sunset": {
     "sunsetAt": "O sol se põe às {{time}}",
-    "sunrise": "Sol nascendo",
-    "sunset": "Sol se pondo"
+    "sunrise": "Nascer",
+    "sunset": "Pôr"
+  },
+  "celestial": {
+    "sun": "Sol",
+    "moon": "Lua",
+    "sunTitle": "Sol",
+    "sunArcLabel": "Arco do sol",
+    "sunHint": "Posição do sol agora no arco. À noite o sol fica abaixo da linha.",
+    "sunBelow": "Sol abaixo da linha — já se pôs",
+    "moonArcLabel": "Arco da lua"
+  },
+  "moon": {
+    "rise": "Nascer",
+    "set": "Pôr",
+    "phase": "Fase",
+    "illumination": "Iluminada",
+    "illuminated": "iluminada",
+    "age": "{{days}} dias",
+    "hint": "A lua caminha no arco quando há horário de nascer/pôr. Fase calculada localmente.",
+    "noTimesHint": "Horário de lua indisponível — mostrando fase de hoje no centro do arco",
+    "new": "Lua nova",
+    "waxingCrescent": "Lua crescente",
+    "firstQuarter": "Quarto crescente",
+    "waxingGibbous": "Crescente gibosa",
+    "full": "Lua cheia",
+    "waningGibbous": "Minguante gibosa",
+    "lastQuarter": "Quarto minguante",
+    "waningCrescent": "Lua minguante"
   },
   "sport": {
     "title": "Caminhada",
     "status": "Dia bom",
-    "desc": "Tempo gostoso para sair"
+    "desc": "Condições agradáveis para sair",
+    "heroLine": "Dia bom para caminhada, Tarde boa para caminhada, Noite boa para caminhada",
+    "heroLineDay": "Dia bom para caminhada",
+    "heroLineAfternoon": "Tarde boa para caminhada",
+    "heroLineNight": "Noite boa para caminhada"
   },
   "metrics": {
     "humidity": "Ar",
-    "humidityDesc": "Um pouquinho abafado",
+    "humidityDesc": "Ligeiramente abafado",
     "wind": "Vento",
     "windGust": "Vento um pouco mais forte às vezes",
     "feelsLike": "Sensação",
@@ -50,7 +81,7 @@
     "pressureDesc": "Deve continuar assim",
     "visibility": "Visão",
     "uv": "Sol",
-    "uvLow": "Tranquilo",
+    "uvLow": "Baixo",
     "uvModerate": "Forte, bom passar protetor",
     "precipitation": "Chuva",
     "dewPoint": "Ar úmido"
@@ -88,13 +119,18 @@
     "summaryGood": "Bom para banho",
     "summaryOk": "Dá para ir",
     "summaryPoor": "Mais agitado, melhor evitar",
-    "waveSmall": "Ondinhas bem pequenas",
+    "waveSmall": "Ondas pequenas",
     "waveMedium": "Ondas médias",
     "waveBig": "Ondas grandes",
     "tideHighPlain": "Maré cheia — água mais alta",
     "tideLowPlain": "Maré seca — areia grande",
     "bestTimePlain": "Melhor entrar",
-    "noDataPlain": "Sem mar por aqui"
+    "noDataPlain": "Sem mar por aqui",
+    "tideRising": "Subindo",
+    "tideFalling": "Descendo",
+    "tideRisingAt": "Subindo • cheia às {{time}}",
+    "tideFallingAt": "Descendo • seca às {{time}}",
+    "tideNow": "Maré"
   },
   "cache": {
     "stale": "Sem internet, mostrando o último que vimos",
@@ -116,7 +152,7 @@
     "51": "Garoa leve",
     "53": "Garoa",
     "55": "Garoa mais forte",
-    "61": "Chuvinha",
+    "61": "Chuva fraca",
     "63": "Chuva",
     "65": "Chuva forte",
     "71": "Neve leve",
@@ -127,6 +163,27 @@
     "82": "Pancadas fortes",
     "95": "Tempo fechado com trovão",
     "96": "Trovão com chuva forte"
+  },
+  "views": {
+    "detail": {
+      "back": "Voltar",
+      "hourlyHint": "Deslize para ver as 24 horas",
+      "metricsTitle": "Métricas",
+      "metricsHint": "Toque em um card para ver detalhes",
+      "dayLength": "Duração do dia",
+      "sunHint": "O arco mostra a posição do sol/lua agora"
+    },
+    "dashboard": {
+      "heroAria": "Ver detalhes do clima atual",
+      "hourlyAria": "Ver próximas horas completo",
+      "dailyAria": "Ver próximos dias completo",
+      "sunAria": "Ver detalhes do sol",
+      "metricsTitle": "Métricas",
+      "metricsAria": "Ver todas as métricas",
+      "marineAria": "Ver mar completo",
+      "marineWeekAria": "Ver semana do mar completa",
+      "tapToExpand": "Toque para ver os 7 dias"
+    }
   },
   "footer": {
     "report": "Algo parece errado?",

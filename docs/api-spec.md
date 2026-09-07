@@ -1,6 +1,6 @@
 # API Spec — app-clima
 
-> Atualizado em: 2026-09-06 — Marine 7 dias + marés
+> Atualizado em: 2026-09-06 — Marine 7 dias + marés + auto coastal
 
 ## Nominatim OSM
 - `GET https://nominatim.openstreetmap.org/search?format=json&q={query}&limit=5&addressdetails=1`
@@ -14,8 +14,8 @@
 ## Open-Meteo Marine (7 dias)
 - `GET https://marine-api.open-meteo.com/v1/marine?latitude=&longitude=&current=wave_height,wave_direction,wave_period&hourly=sea_level_height_msl,wave_height&daily=wave_height_max&timezone=auto&forecast_days=7`
 - `hourly` 168 pontos → `waveAvg` (média dia) e `waveMax`; `sea_level` → `calcTidesFromSeaLevel` estima preamar/baixa-mar (picos locais)
-- Só se litoral (`wave_height != null`) → cache 60min (`TTL.marine`). Se null → modo campo.
-- View model `MarineWeek` em `services/marineWeek.ts`: `days[{date,waveAvg,waveMax,tideHigh,tideLow,tides[],score,bestSlot}]`
+- Só se litoral (`wave_height != null` via `services/coastal.ts:isCoastalByMarine`) → cache 60min (`TTL.marine`). Se null → modo interior: aba Mar escondida, sem fetch subsequente (cache `coastal:lat,lon` 7d evita re-fetch mar em interior).
+- View model `MarineWeek` em `services/marineWeek.ts`: `days[{date,waveAvg,waveMax,tideHigh,tideLow,tides[],score,bestSlot}]` — só construído se litoral
 
 ## Stormglass (opcional, se VITE_STORMGLASS_KEY)
 - `GET https://api.stormglass.io/v2/tide/extremes/point?lat=&lng=&start=&end=` + `Authorization: <key>`

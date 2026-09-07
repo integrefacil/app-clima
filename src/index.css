@@ -29,3 +29,24 @@ body {
 .glass-strong {
   @apply bg-white/15 backdrop-blur-xl border border-white/20 rounded-2xl;
 }
+
+.view-enter {
+  animation: slideIn 180ms ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-enter {
+    animation: none;
+  }
+}

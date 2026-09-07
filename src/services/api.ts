@@ -1,4 +1,4 @@
-import { fetchWithCache, TTL } from './cache'
+import { fetchWithCache, TTL, type CacheKey } from './cache'
 
 export type GeocodeResult = {
   display_name: string
@@ -29,12 +29,15 @@ export type ForecastResponse = {
     wind_speed_10m: number
     wind_direction_10m: number
     weather_code: number
+    uv_index?: number
+    is_day?: number
   }
   hourly: {
     time: string[]
     temperature_2m: number[]
     weather_code: number[]
     precipitation_probability: number[]
+    uv_index?: number[]
   }
   daily: {
     time: string[]
@@ -45,18 +48,20 @@ export type ForecastResponse = {
     sunrise: string[]
     sunset: string[]
     uv_index_max: number[]
+    moonrise?: string[]
+    moonset?: string[]
   }
 }
 
 export async function fetchForecast(lat: number, lon: number): Promise<ForecastResponse> {
-  const key = `forecast:${lat.toFixed(3)},${lon.toFixed(3)}` as const
+  const key = `forecast:v2:${lat.toFixed(3)},${lon.toFixed(3)}` as unknown as CacheKey
   const { data } = await fetchWithCache<ForecastResponse>(key, TTL.forecast, async () => {
     const params = new URLSearchParams({
       latitude: String(lat),
       longitude: String(lon),
-      current: 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,weather_code',
-      hourly: 'temperature_2m,weather_code,precipitation_probability',
-      daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset,uv_index_max',
+      current: 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m,weather_code,uv_index,is_day',
+      hourly: 'temperature_2m,weather_code,precipitation_probability,uv_index',
+      daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,sunrise,sunset,uv_index_max,moonrise,moonset',
       timezone: 'auto',
       forecast_days: '10',
     })
