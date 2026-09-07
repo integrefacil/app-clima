@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DetailHeader } from '../../components/DetailHeader'
+import { HeaderHero } from '../../components/HeaderHero'
 import { CelestialArc } from '../../components/CelestialArc'
 import { isDayNow } from '../../lib/celestial'
 import { getMoonInfo, moonPhaseKey } from '../../lib/moon'
@@ -20,6 +21,16 @@ function diffDuration(sunrise: string, sunset: string) {
 }
 
 type Props = {
+  location: string
+  temp: number
+  code: number
+  max: number
+  min: number
+  feelsLike?: { value: string } | null
+  humidity?: string | null
+  windLabel?: string | null
+  uvLabel?: string | null
+  isDay?: boolean | null
   sunrise: string
   sunset: string
   sunriseISO?: string | null
@@ -31,7 +42,7 @@ type Props = {
   onBack: () => void
 }
 
-export function SunDetail({ sunrise, sunset, sunriseISO, sunsetISO, moonrise, moonset, moonriseISO, moonsetISO, onBack }: Props) {
+export function SunDetail({ location, temp, code, max, min, feelsLike, humidity, windLabel, uvLabel, isDay, sunrise, sunset, sunriseISO, sunsetISO, moonrise, moonset, moonriseISO, moonsetISO, onBack }: Props) {
   const { t } = useTranslation()
   const duration = diffDuration(sunrise, sunset)
   const [now, setNow] = useState(() => new Date())
@@ -55,6 +66,11 @@ export function SunDetail({ sunrise, sunset, sunriseISO, sunsetISO, moonrise, mo
   return (
     <div className="space-y-3 view-enter">
       <DetailHeader title={isSun ? t('celestial.sunTitle') : t(moonPhaseKey(moonInfo.phase))} onBack={onBack} />
+
+      {/* mesmo hero do dashboard — consistência visual */}
+      <div className="glass-strong overflow-hidden">
+        <HeaderHero location={location} temp={temp} conditionCode={code} max={max} min={min} feelsLike={feelsLike ?? null} humidity={humidity ?? null} wind={windLabel ?? null} uvLabel={uvLabel ?? null} isDay={isDay ?? undefined} />
+      </div>
 
       {/* toggle Sol/Lua — auto por horário mas permite inspecionar o outro */}
       <div className="flex gap-1 p-1 glass w-fit">

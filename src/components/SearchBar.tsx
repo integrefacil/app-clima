@@ -62,9 +62,12 @@ export function SearchBar({ onSelect, onSearch }: Props) {
   return (
     <Popover.Root open={isOpen} onOpenChange={(o) => { if (!o) setFocused(false) }}>
       <Popover.Anchor asChild>
-        <div className="glass flex items-center gap-2 px-3 py-2.5 focus-within:ring-2 focus-within:ring-white/20">
-          <span className="text-white/60 text-sm" aria-hidden>
-            🔍
+        <div className="glass !rounded-full flex items-center gap-2 px-3 py-2.5 focus-within:ring-2 focus-within:ring-white/20">
+          <span className="text-white grid place-items-center shrink-0" aria-hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
           </span>
           <input
             ref={inputRef}
@@ -162,8 +165,11 @@ export function SearchBar({ onSelect, onSearch }: Props) {
                 )}
               </div>
             </ScrollArea.Viewport>
-            <ScrollArea.Scrollbar orientation="vertical" className="w-1.5 bg-white/5 rounded-full">
-              <ScrollArea.Thumb className="bg-white/20 rounded-full" />
+            <ScrollArea.Scrollbar
+              orientation="vertical"
+              className="flex w-2.5 select-none touch-none p-[2px] bg-white/[0.07] rounded-full cursor-pointer hover:bg-white/[0.10] transition-colors"
+            >
+              <ScrollArea.Thumb className="flex-1 bg-white/30 rounded-full hover:bg-white/45 active:bg-white/55 cursor-pointer transition-colors" />
             </ScrollArea.Scrollbar>
           </ScrollArea.Root>
         </Popover.Content>

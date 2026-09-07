@@ -9,7 +9,36 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.07);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.52);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 html {
@@ -19,6 +48,23 @@ html {
 body {
   @apply bg-gradient-to-b from-sky-900 via-sky-700 to-sky-600 min-h-screen text-white antialiased;
   background-attachment: fixed;
+}
+
+/* cursor pointer em todo elemento clicável */
+button:not(:disabled),
+a:not([aria-disabled='true']),
+[role='button']:not([aria-disabled='true']),
+summary,
+input[type='button'],
+input[type='submit'],
+input[type='reset'] {
+  cursor: pointer;
+}
+
+button:disabled,
+a[aria-disabled='true'],
+[role='button'][aria-disabled='true'] {
+  cursor: default;
 }
 
 /* iOS card glass */

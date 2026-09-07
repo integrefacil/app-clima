@@ -3,8 +3,6 @@ import { useCallback, useEffect, useState } from 'react'
 export type HashTab = 'forecast' | 'marine'
 export type HashScreen =
   | 'dashboard'
-  | 'hourly'
-  | 'daily'
   | 'sun'
   | 'hero'
   | 'marine-full'
@@ -49,8 +47,8 @@ function parseHash(raw: string): HashView {
   // forecast screens
   const key = second ?? (['clima', 'forecast'].includes(first) ? undefined : first)
   if (!key) return { tab, screen: 'dashboard' }
-  if (['horas', 'hourly', 'hours'].includes(key)) screen = 'hourly'
-  else if (['dias', 'daily', 'days'].includes(key)) screen = 'daily'
+  // legado: hourly/daily agora redirecionam para hero (cards unificados)
+  if (['horas', 'hourly', 'hours', 'dias', 'daily', 'days'].includes(key)) screen = 'hero'
   else if (['sol', 'sun', 'sunset'].includes(key)) screen = 'sun'
   else if (['hero', 'cidade', 'city'].includes(key)) screen = 'hero'
   else if (['completo', 'full', 'marine-full'].includes(key)) screen = 'marine-full'
@@ -66,8 +64,6 @@ function viewToHash(v: HashView): string {
   }
   // forecast — sem abas, marine-full agora é #/clima/completo
   if (v.screen === 'dashboard') return '#/clima'
-  if (v.screen === 'hourly') return '#/clima/horas'
-  if (v.screen === 'daily') return '#/clima/dias'
   if (v.screen === 'sun') return '#/clima/sol'
   if (v.screen === 'hero') return '#/clima/hero'
   if (v.screen === 'marine-full') return '#/clima/completo'

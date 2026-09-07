@@ -27,8 +27,11 @@ export function HourlyStrip({ hours, compact }: { hours: Hour[]; compact?: boole
             ))}
           </div>
         </ScrollArea.Viewport>
-        <ScrollArea.Scrollbar orientation="horizontal" className="h-1.5 bg-white/5 rounded-full mt-1">
-          <ScrollArea.Thumb className="bg-white/20 rounded-full" />
+        <ScrollArea.Scrollbar
+          orientation="horizontal"
+          className="flex h-2.5 select-none touch-none p-[2px] bg-white/[0.07] rounded-full mt-2 cursor-pointer hover:bg-white/[0.10] transition-colors"
+        >
+          <ScrollArea.Thumb className="flex-1 bg-white/30 rounded-full hover:bg-white/45 active:bg-white/55 cursor-pointer transition-colors" />
         </ScrollArea.Scrollbar>
       </ScrollArea.Root>
     </div>

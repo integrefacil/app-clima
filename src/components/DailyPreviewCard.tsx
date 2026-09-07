@@ -75,7 +75,7 @@ export function DailyPreviewCard({ days, onClick }: Props) {
   return (
     <button
       onClick={onClick}
-      aria-label={t('views.dashboard.dailyAria', { defaultValue: 'Ver próximos dias completo' })}
+      aria-label={t('views.dashboard.heroAria', { defaultValue: 'Ver detalhes do clima atual' })}
       className="glass overflow-hidden w-full text-left hover:bg-white/[0.13] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 transition-colors"
     >
       {content}

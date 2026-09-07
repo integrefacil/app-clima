@@ -17,9 +17,9 @@ export function HourlyPreviewCard({ hours, onClick }: Props) {
       <p className="text-xs md:text-sm text-white/60 uppercase tracking-widest px-3 md:px-4 pt-3">
         {t('hourly.title')}
       </p>
-      <div className="px-2 md:px-3 pb-3 pt-3">
-        {/* horizontal strip — scroll suave em mobile, sem scrollbar agressiva */}
-        <div className="flex gap-3 md:gap-4 overflow-x-auto scrollbar-thin pb-1 -mx-1 px-1">
+        <div className="px-2 md:px-3 pb-2 pt-3">
+        {/* horizontal strip — barra visível com área de clique */}
+        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-2 -mx-1 px-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.28)_rgba(255,255,255,0.07)]">
           {visible.map((h, i) => (
             <div
               key={i}
@@ -55,11 +55,11 @@ export function HourlyPreviewCard({ hours, onClick }: Props) {
   return (
     <button
       onClick={onClick}
-      aria-label={t('views.dashboard.hourlyAria', { defaultValue: 'Ver próximas horas completo' })}
-      className="glass overflow-hidden w-full text-left hover:bg-white/[0.13] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 transition-colors group"
+      aria-label={t('views.dashboard.heroAria', { defaultValue: 'Ver detalhes do clima atual' })}
+      className="glass overflow-hidden w-full text-left hover:bg-white/[0.13] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 transition-colors group cursor-pointer"
     >
       {content}
-      <span className="sr-only">{t('views.dashboard.hourlyAria')}</span>
+      <span className="sr-only">{t('views.dashboard.heroAria')}</span>
     </button>
   )
 }

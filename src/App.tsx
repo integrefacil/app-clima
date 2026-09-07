@@ -11,8 +11,6 @@ import { isDayNow } from './lib/celestial'
 import { addToHistory } from './services/history'
 import { useHashView } from './hooks/useHashView'
 import { ForecastDashboard } from './views/ForecastDashboard'
-import { HourlyDetail } from './views/details/HourlyDetail'
-import { DailyDetail } from './views/details/DailyDetail'
 import { SunDetail } from './views/details/SunDetail'
 import { HeroDetail } from './views/details/HeroDetail'
 import { MarineFull } from './views/MarineFull'
@@ -297,12 +295,12 @@ export default function App() {
     }
   }, [marine, forecast, stormglassTides, locale])
 
-  const handleForecastNavigate = (screen: 'sun' | 'hero' | 'marine-full' | 'hourly' | 'daily') => {
+  const handleForecastNavigate = (screen: 'sun' | 'hero' | 'marine-full') => {
     if (screen === 'marine-full') {
       if (!isBeach) return
       navigate({ tab: 'forecast', screen: 'marine-full' })
     } else {
-      navigate({ tab: 'forecast', screen: screen as never })
+      navigate({ tab: 'forecast', screen })
     }
   }
 
@@ -365,10 +363,8 @@ export default function App() {
             />
           )}
           {view.screen === 'hero' && <HeroDetail location={loc.name} temp={header.temp} code={header.code} max={header.max} min={header.min} hours={hourly} days={daily} feelsLike={feelsLike} humidity={humidity} windLabel={windLabel} uvLabel={uvLabel} isDay={isDay} onBack={backToDashboard} />}
-          {view.screen === 'hourly' && <HourlyDetail hours={hourly} onBack={backToDashboard} />}
-          {view.screen === 'daily' && <DailyDetail days={daily} onBack={backToDashboard} />}
-          {view.screen === 'sun' && <SunDetail sunrise={sunrise} sunset={sunset} sunriseISO={sunriseISO} sunsetISO={sunsetISO} moonrise={moonrise} moonset={moonset} moonriseISO={moonriseISO} moonsetISO={moonsetISO} onBack={backToDashboard} />}
-          {view.screen === 'marine-full' && <MarineFull marine={marine?.current ?? null} week={marineWeek} onBack={backToDashboard} />}
+          {view.screen === 'sun' && <SunDetail location={loc.name} temp={header.temp} code={header.code} max={header.max} min={header.min} feelsLike={feelsLike} humidity={humidity} windLabel={windLabel} uvLabel={uvLabel} isDay={isDay} sunrise={sunrise} sunset={sunset} sunriseISO={sunriseISO} sunsetISO={sunsetISO} moonrise={moonrise} moonset={moonset} moonriseISO={moonriseISO} moonsetISO={moonsetISO} onBack={backToDashboard} />}
+          {view.screen === 'marine-full' && <MarineFull location={loc.name} temp={header.temp} code={header.code} max={header.max} min={header.min} feelsLike={feelsLike} humidity={humidity} windLabel={windLabel} uvLabel={uvLabel} isDay={isDay} marine={marine?.current ?? null} week={marineWeek} onBack={backToDashboard} />}
         </div>
 
         <Separator.Root className="h-px bg-white/10 my-2" />

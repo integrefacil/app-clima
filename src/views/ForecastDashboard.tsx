@@ -37,7 +37,7 @@ type Props = {
   isDay?: boolean | null
   hours: Hour[]
   days: Day[]
-  onNavigate: (screen: 'sun' | 'marine-full' | 'hero' | 'hourly' | 'daily') => void
+  onNavigate: (screen: 'sun' | 'marine-full' | 'hero') => void
 }
 
 export function ForecastDashboard({ locName, temp, code, max, min, sunrise, sunset, sunriseISO, sunsetISO, moonrise, moonset, moonriseISO, moonsetISO, metrics, marine, week, feelsLike, humidity, windLabel, uvLabel, isDay, hours, days, onNavigate }: Props) {
@@ -89,9 +89,9 @@ export function ForecastDashboard({ locName, temp, code, max, min, sunrise, suns
         <HeaderHero location={locName} temp={temp} conditionCode={code} max={max} min={min} feelsLike={feelsLike ?? null} humidity={humidity ?? null} wind={windLabel ?? null} uvLabel={uvLabel ?? null} isDay={isDay ?? undefined} />
       </SummaryCard>
 
-      {/* próximos cards — logo abaixo do hero, fiel às imagens 1 e 2 */}
-      <HourlyPreviewCard hours={hours} onClick={() => onNavigate('hourly')} />
-      <DailyPreviewCard days={days} onClick={() => onNavigate('daily')} />
+      {/* próximos cards — abrem detalhes do hero (HeroDetail já contém horas + dias) */}
+      <HourlyPreviewCard hours={hours} onClick={() => onNavigate('hero')} />
+      <DailyPreviewCard days={days} onClick={() => onNavigate('hero')} />
 
       {/* métricas removidas do grid — Ar e Vento agora no Hero para não poluir */}
       {metrics.length > 0 && <MetricGrid items={metrics} />}
